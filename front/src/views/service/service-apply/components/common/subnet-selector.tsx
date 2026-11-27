@@ -140,7 +140,7 @@ export default defineComponent({
               text
               theme='primary'
               onClick={() => {
-                const url = '/#/resource/resource?type=subnet';
+                const url = '/#/resource/manage/subnet';
                 window.open(url, '_blank');
               }}>
               新建子网

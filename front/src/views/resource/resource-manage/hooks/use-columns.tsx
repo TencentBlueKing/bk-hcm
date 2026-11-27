@@ -2,13 +2,13 @@
 // table 字段相关信息
 import i18n from '@/language/i18n';
 import { SecurityRuleEnum, HuaweiSecurityRuleEnum, AzureSecurityRuleEnum } from '@/typings';
-import { useAccountStore, useLoadBalancerStore } from '@/store';
+import { useLoadBalancerStore } from '@/store';
 import { Button } from 'bkui-vue';
 import { type Settings } from 'bkui-vue/lib/table/props';
 import { h, ref } from 'vue';
 import type { Ref } from 'vue';
 import { RouteLocationRaw, useRoute, useRouter } from 'vue-router';
-import { CLOUD_HOST_STATUS, LB_ISP, GLOBAL_BIZS_KEY, VendorEnum, VendorMap } from '@/common/constant';
+import { CLOUD_HOST_STATUS, LB_ISP, VendorEnum, VendorMap } from '@/common/constant';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -43,8 +43,21 @@ import {
 import { getLoadBalancerInstanceSpecName } from '@/views/load-balancer/utils';
 import { BILL_VENDORS_MAP, BILL_SITE_TYPES_MAP } from '@/views/bill/account/account-manage/constants';
 import CopyToClipboard from '@/components/copy-to-clipboard/index.vue';
-import { MENU_BUSINESS_LOAD_BALANCER_DETAILS, MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
+import {
+  MENU_BUSINESS_LOAD_BALANCER_DETAILS,
+  MENU_BUSINESS_TARGET_GROUP_DETAILS,
+  MENU_BUSINESS_VPC_DETAILS,
+  MENU_BUSINESS_SUBNET_DETAILS,
+  MENU_BUSINESS_DRIVE_DETAILS,
+  MENU_BUSINESS_HOST_DETAILS,
+  MENU_BUSINESS_IMAGE_DETAILS,
+  MENU_BUSINESS_NIF_DETAILS,
+  MENU_BUSINESS_ROUTE_TABLE_DETAILS,
+  MENU_BUSINESS_EIP_DETAILS,
+  MENU_RESOURCE_DETAIL,
+} from '@/constants/menu-symbol';
 import QueryString from 'qs';
+import routerAction from '@/router/utils/action';
 
 interface LinkFieldOptions {
   type: string; // 资源类型
@@ -60,11 +73,21 @@ interface LinkFieldOptions {
   sort?: boolean; // 是否支持排序
 }
 
+const BUSINESS_DETAIL_ROUTE_MAP: Record<string, symbol> = {
+  vpc: MENU_BUSINESS_VPC_DETAILS,
+  subnet: MENU_BUSINESS_SUBNET_DETAILS,
+  drive: MENU_BUSINESS_DRIVE_DETAILS,
+  host: MENU_BUSINESS_HOST_DETAILS,
+  image: MENU_BUSINESS_IMAGE_DETAILS,
+  'network-interface': MENU_BUSINESS_NIF_DETAILS,
+  routing: MENU_BUSINESS_ROUTE_TABLE_DETAILS,
+  eip: MENU_BUSINESS_EIP_DETAILS,
+};
+
 export default (type: string, isSimpleShow = false, vendor?: string, options?: any) => {
   const customRender = options?.customRender ?? (() => {});
   const router = useRouter();
   const route = useRoute();
-  const accountStore = useAccountStore();
   const loadBalancerStore = useLoadBalancerStore();
   const { t } = i18n.global;
   const { getRegionName } = useRegionsStore();
@@ -106,15 +129,22 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
         }
 
         const defaultClickHandler = () => {
-          const routeInfo: any = { query: { ...route.query, id: data[idFiled], type: data.vendor } };
-          // 业务下
-          if (route.path.includes('business')) {
-            routeInfo.query.bizs = accountStore.bizs;
-            Object.assign(routeInfo, { name: `${type}BusinessDetail` });
+          const routeInfo: any = {};
+          if (whereAmI.value === Senarios.business) {
+            Object.assign(routeInfo, {
+              name: BUSINESS_DETAIL_ROUTE_MAP[type],
+              params: { bizId: route.params.bizId, id: data[idFiled] },
+              query: { vendor: data.vendor },
+            });
           } else {
-            Object.assign(routeInfo, { name: 'resourceDetail', params: { type } });
+            // accountId 保留侧边栏选中状态
+            Object.assign(routeInfo, {
+              name: MENU_RESOURCE_DETAIL,
+              params: { resourceType: type, id: data[idFiled] },
+              query: { accountId: route.query.accountId, vendor: data.vendor },
+            });
           }
-          router.push(routeInfo);
+          routerAction.redirect(routeInfo, { history: true });
         };
 
         return (
@@ -656,7 +686,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
   ];
 
   const routeColumns = [
-    getLinkField({ type: 'route', label: '路由表ID', field: 'cloud_id', idFiled: 'id' }),
+    getLinkField({ type: 'routing', label: '路由表ID', field: 'cloud_id', idFiled: 'id' }),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',
@@ -959,7 +989,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
 
   const eipColumns = [
     { type: 'selection', width: 30, minWidth: 30, onlyShowOnList: true },
-    getLinkField({ type: 'eips', label: 'IP资源ID', field: 'cloud_id', idFiled: 'id' }),
+    getLinkField({ type: 'eip', label: 'IP资源ID', field: 'cloud_id', idFiled: 'id' }),
     // {
     //   label: '资源 ID',
     //   field: 'cloud_id',
@@ -1347,7 +1377,7 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
           onClick={renderFieldPushState(
             {
               name: MENU_BUSINESS_TARGET_GROUP_DETAILS,
-              params: { id },
+              params: { bizId: route.params.bizId, id },
               query: { ...route.query, type: 'detail', vendor },
             },
             () => {
@@ -1527,9 +1557,8 @@ export default (type: string, isSimpleShow = false, vendor?: string, options?: a
             theme='primary'
             onClick={renderFieldPushState({
               name: MENU_BUSINESS_LOAD_BALANCER_DETAILS,
-              params: { id: row.lb_id },
+              params: { bizId: route.params.bizId, id: row.lb_id },
               query: {
-                [GLOBAL_BIZS_KEY]: route.query[GLOBAL_BIZS_KEY],
                 filter: QueryString.stringify(
                   { cloud_id: row.cloud_lbl_id },
                   { arrayFormat: 'comma', encode: false, allowEmptyArrays: true },

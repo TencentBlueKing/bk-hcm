@@ -8,7 +8,6 @@ import { DisplayFieldType, DisplayFieldFactory } from '../../children/display/fi
 import { cloneDeep } from 'lodash';
 import routerAction from '@/router/utils/action';
 import { MENU_BUSINESS_TARGET_GROUP_DETAILS } from '@/constants/menu-symbol';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { IAuthSign } from '@/common/auth-service';
 
 import Panel from '@/components/panel';
@@ -118,9 +117,8 @@ const openTargetGroupHealthCheckPage = () => {
   const { target_group_id, bk_biz_id, vendor } = props.listenerDetails;
   routerAction.open({
     name: MENU_BUSINESS_TARGET_GROUP_DETAILS,
-    params: { id: target_group_id },
+    params: { bizId: bk_biz_id, id: target_group_id },
     query: {
-      [GLOBAL_BIZS_KEY]: bk_biz_id,
       vendor,
       type: 'health',
     },

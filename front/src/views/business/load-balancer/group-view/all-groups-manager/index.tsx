@@ -162,10 +162,14 @@ export default defineComponent({
                                   <Button
                                     text
                                     disabled={noPerm || !isSelectionsBelongSameAccountAndLB.value}
-                                    v-bk-tooltips={{
-                                      content: '传入的目标组不同属于一个负载均衡/账号, 不可进行批量移除RS操作',
-                                      disabled: isSelectionsBelongSameAccountAndLB.value,
-                                    }}
+                                    v-bk-tooltips={
+                                      noPerm
+                                        ? { disabled: true }
+                                        : {
+                                            content: '传入的目标组不同属于一个负载均衡/账号, 不可进行批量移除RS操作',
+                                            disabled: isSelectionsBelongSameAccountAndLB.value,
+                                          }
+                                    }
                                     onClick={handleBatchDeleteRs}>
                                     {t('批量移除 RS')}
                                   </Button>
@@ -185,15 +189,16 @@ export default defineComponent({
                                       !isSelectionsBelongSameVpc.value
                                     }
                                     v-bk-tooltips={
-                                      !isSelectionsBelongSameAccountAndLB.value
-                                        ? {
-                                            content: '传入的目标组不同属于一个负载均衡/账号, 不可进行批量添加RS操作',
-                                            disabled: isSelectionsBelongSameAccountAndLB.value,
-                                          }
-                                        : {
-                                            content: '传入的目标组不同属于一个VPC, 不可进行批量添加RS操作',
-                                            disabled: isSelectionsBelongSameVpc.value,
-                                          }
+                                      (!noPerm &&
+                                        (!isSelectionsBelongSameAccountAndLB.value
+                                          ? {
+                                              content: '传入的目标组不同属于一个负载均衡/账号, 不可进行批量添加RS操作',
+                                              disabled: isSelectionsBelongSameAccountAndLB.value,
+                                            }
+                                          : {
+                                              content: '传入的目标组不同属于一个VPC, 不可进行批量添加RS操作',
+                                              disabled: isSelectionsBelongSameVpc.value,
+                                            })) || { disabled: true }
                                     }
                                     onClick={handleBatchAddRs}>
                                     {t('批量添加 RS')}

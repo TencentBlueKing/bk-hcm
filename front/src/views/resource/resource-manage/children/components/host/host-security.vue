@@ -1,15 +1,21 @@
 <script lang="ts" setup>
-import { ref, PropType, reactive, h, watch, computed, inject } from 'vue';
+import { ref, PropType, reactive, h, watch, computed, resolveComponent } from 'vue';
 import { useI18n } from 'vue-i18n';
 import useQueryCommonList from '@/views/resource/resource-manage/hooks/use-query-list-common';
 import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import { useResourceStore, useAccountStore } from '@/store';
 import { QueryRuleOPEnum } from '@/typings';
-import { GLOBAL_BIZS_KEY, VendorEnum } from '@/common/constant';
+import { VendorEnum } from '@/common/constant';
 import { AUTH_BIZ_UPDATE_IAAS_RESOURCE, AUTH_UPDATE_IAAS_RESOURCE } from '@/constants/auth-symbols';
 import routerAction from '@/router/utils/action';
-import bus from '@/common/bus';
+import {
+  MENU_BUSINESS_NETWORK_INTERFACE_MANAGEMENT,
+  MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
+  MENU_RESOURCE_RESOURCE_LIST,
+} from '@/constants/menu-symbol';
+import { useResourceDetailAuth } from '@/views/resource/resource-manage/hooks/use-resource-detail-route';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 import { Button, Message, OverflowTitle } from 'bkui-vue';
 import SecurityGroupSelectorDialog from '@/components/security-group-selector-dialog/index.vue';
@@ -70,12 +76,9 @@ const state = reactive<any>({
 const { t } = useI18n();
 const resourceStore = useResourceStore();
 const accountStore = useAccountStore();
-const authVerifyData: any = inject('authVerifyData');
-
-const actionName = computed(() => {
-  // 资源下没有业务ID
-  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
-});
+const { getBizsId } = useWhereAmI();
+const { authPending, updateSign } = useResourceDetailAuth(computed(() => props.data?.account_id));
+const HcmAuthComp = resolveComponent('hcm-auth');
 
 const authSign = computed(() => {
   return isResourcePage.value
@@ -99,11 +102,6 @@ const multiple = computed(() => {
   const isMultiple = [VendorEnum.TCLOUD, VendorEnum.AWS];
   return isMultiple.includes(props.data.vendor);
 });
-
-// 权限弹窗 bus通知最外层弹出
-const showAuthDialog = (authActionName: string) => {
-  bus.$emit('auth', authActionName);
-};
 
 const isResourcePage = computed(() => {
   // 资源下没有业务ID
@@ -148,14 +146,16 @@ const columns: any = [
       const jump = () => {
         if (isResourcePage.value) {
           routerAction.open({
-            path: '/resource/resource',
+            name: MENU_RESOURCE_RESOURCE_LIST,
+            params: { resourceType: 'security' },
             // accountId用于左侧账号列表定位账号
-            query: { type: 'security', accountId: data.account_id },
+            query: { accountId: data.account_id },
           });
         } else {
           routerAction.open({
-            path: '/business/security',
-            query: { [GLOBAL_BIZS_KEY]: accountStore.bizs, type: 'security', scene: 'group' },
+            name: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT,
+            params: { bizId: getBizsId() },
+            query: { type: 'security', scene: 'group' },
           });
         }
       };
@@ -202,34 +202,32 @@ const columns: any = [
             ['绑定'],
           ),
         h(
-          'span',
+          HcmAuthComp,
+          { sign: updateSign.value, ignore: authPending.value, tag: 'span' },
           {
-            onClick() {
-              showAuthDialog(actionName.value);
-            },
-          },
-          [
-            h(
-              Button,
-              {
-                text: true,
-                theme: 'primary',
-                disabled:
-                  (data.vendor === 'azure' && !data.extension?.cloud_security_group_id) ||
-                  !authVerifyData.value?.permissionAction[actionName.value], // 如果没有安全组id 就不可以解绑
-                onClick() {
-                  if (data.vendor === 'azure') {
-                    securityId.value = data.extension.security_group_id;
-                    curreClickId.value = data.id;
-                  } else {
-                    securityId.value = data.id;
-                  }
-                  unBind(data);
+            default: ({ noPerm }: { noPerm: boolean }) =>
+              h(
+                Button,
+                {
+                  text: true,
+                  theme: 'primary',
+                  disabled:
+                    (data.vendor === 'azure' && !data.extension?.cloud_security_group_id) || // 如果没有安全组id 就不可以解绑
+                    noPerm ||
+                    authPending.value,
+                  onClick() {
+                    if (data.vendor === 'azure') {
+                      securityId.value = data.extension.security_group_id;
+                      curreClickId.value = data.id;
+                    } else {
+                      securityId.value = data.id;
+                    }
+                    unBind(data);
+                  },
                 },
-              },
-              ['解绑'],
-            ),
-          ],
+                ['解绑'],
+              ),
+          },
         ),
       ]);
     },
@@ -245,12 +243,13 @@ if (props.data.vendor === 'azure') {
       const jump = () => {
         if (isResourcePage.value) {
           routerAction.open({
-            path: '/resource/resource',
+            name: MENU_RESOURCE_RESOURCE_LIST,
+            params: { resourceType: 'network-interface' },
             // accountId用于左侧账号列表定位账号
-            query: { type: 'network-interface', accountId: data.account_id },
+            query: { accountId: data.account_id },
           });
         } else {
-          routerAction.open({ path: '/business/network-interface', query: { [GLOBAL_BIZS_KEY]: accountStore.bizs } });
+          routerAction.open({ name: MENU_BUSINESS_NETWORK_INTERFACE_MANAGEMENT, params: { bizId: getBizsId() } });
         }
       };
 

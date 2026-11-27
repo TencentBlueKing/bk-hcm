@@ -117,6 +117,10 @@ type LoadBalancerExtUpdateReq[T corelb.Extension] struct {
 	Memo                 *string     `json:"memo"`
 	BandWidth            int64       `json:"bandwidth"`
 	Isp                  string      `json:"isp"`
+	// Zones 可用区，为空时不更新
+	Zones []string `json:"zones,omitempty"`
+	// BackupZones 备可用区，为空时不更新
+	BackupZones []string `json:"backup_zones,omitempty"`
 
 	*core.Revision `json:",inline"`
 	Extension      *T `json:"extension"`

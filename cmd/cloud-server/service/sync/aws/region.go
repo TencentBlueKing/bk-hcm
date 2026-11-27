@@ -21,9 +21,11 @@ package aws
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"hcm/pkg/api/core"
+	protocore "hcm/pkg/api/core/cloud/region"
 	protohcregion "hcm/pkg/api/hc-service/region"
 	dataservice "hcm/pkg/client/data-service"
 	hcservice "hcm/pkg/client/hc-service"
@@ -68,14 +70,33 @@ func ListRegion(kt *kit.Kit, dataCli *dataservice.Client, accountID string) ([]s
 		return nil, err
 	}
 
-	if len(result.Details) == 0 {
-		return nil, errors.New("aws region is empty")
+	regions, disabledRegions, err := parseSyncEnabledRegions(result.Details)
+	if err != nil {
+		return nil, err
 	}
 
-	regions := make([]string, 0, len(result.Details))
-	for _, one := range result.Details {
-		regions = append(regions, one.RegionID)
-	}
+	logs.Infof("aws account[%s] sync enabled region count: %d, disabled regions: %v, rid: %s",
+		accountID, len(regions), disabledRegions, kt.Rid)
 
 	return regions, nil
+}
+
+func parseSyncEnabledRegions(details []protocore.AwsRegion) (enabled, disabled []string, err error) {
+	if len(details) == 0 {
+		return nil, nil, errors.New("aws region is empty")
+	}
+
+	enabled = make([]string, 0, len(details))
+	disabled = make([]string, 0)
+	for _, one := range details {
+		if one.SyncEnable {
+			enabled = append(enabled, one.RegionID)
+		} else {
+			disabled = append(disabled, one.RegionID)
+		}
+	}
+	if len(enabled) == 0 {
+		return nil, disabled, fmt.Errorf("all aws regions are disabled, disabled regions: %v", disabled)
+	}
+	return enabled, disabled, nil
 }

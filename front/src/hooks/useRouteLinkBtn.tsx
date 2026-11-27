@@ -1,6 +1,15 @@
 import { VendorEnum } from '@/common/constant';
 import { computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import {
+  MENU_BUSINESS_IMAGE_DETAILS,
+  MENU_BUSINESS_SUBNET_DETAILS,
+  MENU_BUSINESS_VPC_DETAILS,
+  MENU_RESOURCE_ACCOUNT_DETAIL,
+  MENU_RESOURCE_DETAIL,
+} from '@/constants/menu-symbol';
+import routerAction from '@/router/utils/action';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 
 export interface IDetail {
   vendor: VendorEnum;
@@ -9,7 +18,7 @@ export interface IDetail {
 
 export interface IMeta {
   id: string; // IDetail[id] 作为跳转链接参数 id 的值
-  type: TypeEnum; // 如果是业务，将跳转到 ${type}BusinessDetail; 如果是资源，跳转到resource/detail/:type; 这里强依赖于 router 配置文件的路由命名规范
+  type: TypeEnum; // 业务下跳业务详情 /business/:type/detail/:id，资源下跳资源纳管详情 /resource/manage/:resourceType/details/:id
   name: string; // IDetail[name] 作为按钮要显示的文字内容
   isExpand?: boolean; // 是否拓展网卡，当存在拓展网卡时，网络、子网、公私IPV4、公私IPV6都是2份，此时 IDetail[id] 和 IDetail[name] 都是一个长度为2的数组, 需要特殊处理
 }
@@ -21,9 +30,16 @@ export enum TypeEnum {
   IMAGE = 'image',
 }
 
+const BUSINESS_DETAIL_ROUTE_MAP: Partial<Record<TypeEnum, symbol>> = {
+  [TypeEnum.VPC]: MENU_BUSINESS_VPC_DETAILS,
+  [TypeEnum.SUBNET]: MENU_BUSINESS_SUBNET_DETAILS,
+  [TypeEnum.IMAGE]: MENU_BUSINESS_IMAGE_DETAILS,
+};
+
 export const useRouteLinkBtn = (data: IDetail, meta: IMeta) => {
   const router = useRouter();
   const route = useRoute();
+  const { whereAmI } = useWhereAmI();
   const { id, name, type, isExpand } = meta;
   const { vendor } = data;
   // eslint-disable-next-line no-nested-ternary
@@ -37,29 +53,26 @@ export const useRouteLinkBtn = (data: IDetail, meta: IMeta) => {
   });
 
   const handleClick = () => {
-    const routeInfo = {
-      query: {
-        ...route.query,
-        id: computedId.value,
-        type: vendor,
-      },
-    };
-    if (route.path.includes('business')) {
+    // 账号详情在资源运营 → 账号管理下，业务、资源两侧同一地址
+    if (type === TypeEnum.ACCOUNT) {
+      router.push({ name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId: computedId.value } });
+      return;
+    }
+    const routeInfo: any = {};
+    if (whereAmI.value === Senarios.business) {
       Object.assign(routeInfo, {
-        name: type === TypeEnum.ACCOUNT ? 'accountDetail' : `${type}BusinessDetail`,
+        name: BUSINESS_DETAIL_ROUTE_MAP[type],
+        params: { bizId: route.params.bizId, id: computedId.value },
+        query: { vendor },
       });
     } else {
       Object.assign(routeInfo, {
-        name: type === TypeEnum.ACCOUNT ? 'accountDetail' : 'resourceDetail',
-        params: {
-          type,
-        },
+        name: MENU_RESOURCE_DETAIL,
+        params: { resourceType: type, id: computedId.value },
+        query: { accountId: route.query.accountId, vendor },
       });
     }
-    if (id === 'account_id') {
-      Object.assign(routeInfo.query, { accountId: computedId.value });
-    }
-    router.push(routeInfo);
+    routerAction.redirect(routeInfo, { history: true });
   };
 
   const render = () => {

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { provide, computed } from 'vue';
+import { provide, computed, type Component } from 'vue';
 import { useRoute } from 'vue-router';
 
 import HostDetail from '@/views/resource/resource-manage/children/detail/host-detail.vue';
@@ -13,65 +13,50 @@ import RoutingDetail from '@/views/resource/resource-manage/children/detail/rout
 import ImageDetail from '@/views/resource/resource-manage/children/detail/image-detail.vue';
 import NetworkInterfaceDetail from '@/views/resource/resource-manage/children/detail/network-interface-detail.vue';
 import TemplateDetail from '../resource/resource-manage/children/detail/template-detail';
-import { useVerify } from '@/hooks';
-import bus from '@/common/bus';
 
 import { useAccountStore } from '@/store';
+import {
+  MENU_BUSINESS_HOST_DETAILS,
+  MENU_BUSINESS_VPC_DETAILS,
+  MENU_BUSINESS_SUBNET_DETAILS,
+  MENU_BUSINESS_SECURITY_GROUP_DETAILS,
+  MENU_BUSINESS_DRIVE_DETAILS,
+  MENU_BUSINESS_EIP_DETAILS,
+  MENU_BUSINESS_ROUTE_TABLE_DETAILS,
+  MENU_BUSINESS_GCP_DETAILS,
+  MENU_BUSINESS_IMAGE_DETAILS,
+  MENU_BUSINESS_NIF_DETAILS,
+  MENU_BUSINESS_TEMPLATE_DETAILS,
+} from '@/constants/menu-symbol';
 
 const route = useRoute();
 const accountStore = useAccountStore();
 
-// 权限hook
-const {
-  showPermissionDialog,
-  handlePermissionConfirm,
-  handlePermissionDialog,
-  handleAuth,
-  permissionParams,
-  authVerifyData,
-} = useVerify();
+// 详情 ID 在路径里，按路由 name 取组件（按路径子串匹配会被 ID 干扰）
+const componentMap = new Map<symbol, Component>([
+  [MENU_BUSINESS_HOST_DETAILS, HostDetail],
+  [MENU_BUSINESS_VPC_DETAILS, VpcDetail],
+  [MENU_BUSINESS_SUBNET_DETAILS, SubnetDetail],
+  [MENU_BUSINESS_SECURITY_GROUP_DETAILS, SecurityDetail],
+  [MENU_BUSINESS_DRIVE_DETAILS, DriveDetail],
+  [MENU_BUSINESS_EIP_DETAILS, IpDetail],
+  [MENU_BUSINESS_ROUTE_TABLE_DETAILS, RoutingDetail],
+  [MENU_BUSINESS_GCP_DETAILS, GcpDetail],
+  [MENU_BUSINESS_IMAGE_DETAILS, ImageDetail],
+  [MENU_BUSINESS_NIF_DETAILS, NetworkInterfaceDetail],
+  [MENU_BUSINESS_TEMPLATE_DETAILS, TemplateDetail],
+]);
 
-const componentMap = {
-  host: HostDetail,
-  vpc: VpcDetail,
-  subnet: SubnetDetail,
-  security: SecurityDetail,
-  drive: DriveDetail,
-  ip: IpDetail,
-  routing: RoutingDetail,
-  gcp: GcpDetail,
-  image: ImageDetail,
-  'network-interface': NetworkInterfaceDetail,
-  template: TemplateDetail,
-};
-
-const renderComponent = computed(() => {
-  return Object.keys(componentMap).reduce((acc, cur) => {
-    if (route.path.includes(cur)) acc = componentMap[cur];
-    return acc;
-  }, {});
-});
+const renderComponent = computed(() => componentMap.get(route.name as symbol));
 
 const isResourcePage = computed(() => {
-  // 资源下没有业务ID
   return !accountStore.bizs;
 });
 
-provide('authVerifyData', authVerifyData); // 将数据传入孙组件
 provide('isResourcePage', isResourcePage);
-
-bus.$on('auth', (authActionName: string) => {
-  // bus监听
-  handleAuth(authActionName);
-});
 </script>
 
 <template>
-  <component :is="renderComponent"></component>
-  <permission-dialog
-    v-model:is-show="showPermissionDialog"
-    :params="permissionParams"
-    @cancel="handlePermissionDialog"
-    @confirm="handlePermissionConfirm"
-  ></permission-dialog>
+  <!-- 详情间互跳只换 params，按 ID 重建组件，避免沿用旧 ID 的数据 -->
+  <component :is="renderComponent" :key="route.params.id"></component>
 </template>

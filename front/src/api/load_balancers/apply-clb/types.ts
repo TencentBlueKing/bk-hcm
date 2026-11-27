@@ -99,14 +99,14 @@ export interface ExclusiveClusterTag {
   clusters: ExclusiveClusterItem[];
 }
 
-// 独占集群标签查询支持的运营商，仅三网直连；BGP 等其它类型不支持独占集群
-export type ExclusiveClusterIsp = 'CMCC' | 'CUCC' | 'CTCC';
+// 独占集群标签查询支持的运营商；CAP 查询时由调用方归一化为 BGP
+export type ExclusiveClusterIsp = 'BGP' | 'CMCC' | 'CUCC' | 'CTCC';
 
 export interface ExclusiveClusterTagsReqData {
   bk_biz_id: number;
   account_id: string;
   region: string;
-  // 运营商类型，仅支持 CMCC / CUCC / CTCC
+  // 运营商类型：BGP / CMCC / CUCC / CTCC
   isp: ExclusiveClusterIsp;
   // 主可用区：随机可用区不传；单可用区集群填一个元素；主备集群填主可用区
   zones?: string[];

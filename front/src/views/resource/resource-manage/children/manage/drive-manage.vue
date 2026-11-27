@@ -142,7 +142,7 @@ const renderColumns = [
                 },
                 [t('回收')],
               ),
-              [[bkTooltips, generateTooltipsOptions(data)]],
+              [[bkTooltips, noPerm ? { disabled: true } : generateTooltipsOptions(data)]],
             ),
         },
       );
@@ -213,7 +213,7 @@ const isCurRowSelectEnable = (row: any) => {
         </bk-button>
       </hcm-auth>
 
-      <div class="flex-row align-items-center justify-content-arround mlauto">
+      <div class="flex-row align-items-center mlauto">
         <bk-search-select
           class="w500"
           clearable
@@ -251,18 +251,23 @@ const isCurRowSelectEnable = (row: any) => {
 .w100 {
   width: 100px;
 }
+
 .w60 {
   width: 60px;
 }
+
 .mt20 {
   margin-top: 20px;
 }
+
 .mr15 {
   margin-right: 15px;
 }
+
 .mlauto {
   margin-left: auto;
 }
+
 .toolbar {
   display: flex;
   align-items: center;

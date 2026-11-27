@@ -7,11 +7,13 @@
 
 ## 职责
 
-（待补充：本模块的核心职责、边界、关键文件与对外接口。）
+`route-config.ts` 注册业务与服务两套单据入口（`entry-biz.vue` / `entry-srv.vue`）；各列表页签共用 `children/common-table.vue`，通过 `hooks/useTable/useTable.tsx` 生成搜索与表格。旧“我的申请”路由重定向到单据入口。
 
 ## 关键流程 / 注意事项
 
-（待补充：由 workflow 在首次改动本模块时深化。）
+- 列表搜索是共享 `SearchSelect`，字段为单号、申请类型、状态、申请人（`constants.ts`），不是 task 的多列 Grid 搜索。工具栏搜索框允许收缩；不直接开启工具栏换行，因为 `useTable` 按固定 48px 扣除其高度。
+- 申请详情按类型分派；`children/apply-detail/clb.vue` 使用弹性两列 Grid，`common-apply-detail/index.vue` 展示通用申请的基本信息及参数。长文本在值区换行；已有参数 overflow tooltip 保留。
+- 账号申请详情还有 `AccountApplyDetail → DetailInfo → InfoList` 独立链路，不应只改 Grid 后假定覆盖所有详情。列表固定列与表格自身横滚保持各自职责。
 
 ## 明细目录
 

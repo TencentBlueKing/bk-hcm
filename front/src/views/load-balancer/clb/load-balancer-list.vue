@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { computed, inject, ref, Ref, useTemplateRef, watch, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { LocationQueryRaw, useRoute } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { ILoadBalancerWithDeleteProtectionItem, useLoadBalancerClbStore } from '@/store/load-balancer/clb';
 import { ValidateValuesFunc } from 'bkui-vue/lib/search-select/utils';
 import { ConditionKeyType, SearchConditionFactory } from '../children/search/condition-factory';
 import { ISearchSelectValue } from '@/typings';
 import { getSimpleConditionBySearchSelect, transformSimpleCondition } from '@/utils/search';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
+
 import routerAction from '@/router/utils/action';
-import { MENU_BUSINESS_LOAD_BALANCER_DETAILS, MENU_BUSINESS_LOAD_BALANCER_OVERVIEW } from '@/constants/menu-symbol';
+import { MENU_BUSINESS_LOAD_BALANCER_DETAILS, MENU_BUSINESS_LOAD_BALANCER_LB_VIEW } from '@/constants/menu-symbol';
 import { getInstVip, parseIP } from '@/utils';
+import { pickClbDetailsBaseQuery } from '../utils';
 
 import { VirtualRender } from 'bkui-vue';
 import Search from '../children/search/search.vue';
@@ -73,13 +74,23 @@ watch(
 
 const activeLoadBalancerId = ref<string>();
 const handleClick = (id: string) => {
+  if (id && id === route.params.id && route.name === MENU_BUSINESS_LOAD_BALANCER_DETAILS) {
+    return;
+  }
   activeLoadBalancerId.value = id;
 
-  const query: LocationQueryRaw = { [GLOBAL_BIZS_KEY]: currentGlobalBusinessId.value };
   if (id) {
-    routerAction.redirect({ name: MENU_BUSINESS_LOAD_BALANCER_DETAILS, params: { id }, query });
+    routerAction.redirect({
+      name: MENU_BUSINESS_LOAD_BALANCER_DETAILS,
+      params: { bizId: currentGlobalBusinessId.value, id },
+      // 切换负载均衡时仅保留必要公共参数（如 details_active、_f），隔离单 tab 分页/筛选/排序参数
+      query: pickClbDetailsBaseQuery(route.query),
+    });
   } else {
-    routerAction.redirect({ name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW, query });
+    routerAction.redirect({
+      name: MENU_BUSINESS_LOAD_BALANCER_LB_VIEW,
+      params: { bizId: currentGlobalBusinessId.value },
+    });
   }
 };
 

@@ -1,4 +1,4 @@
-import { computed, defineComponent, provide, reactive, ref, watch } from 'vue';
+import { computed, defineComponent, reactive, ref, watch } from 'vue';
 import './index.scss';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import useBillStore, { IMainAccountDetail } from '@/store/useBillStore';
@@ -6,9 +6,9 @@ import { Message, Button, Form, Input } from 'bkui-vue';
 import { BILL_VENDORS_MAP } from '../../account-manage/constants';
 import { SITE_TYPE_MAP } from '@/common/constant';
 import { timeFormatter } from '@/common/util';
-import { useVerify } from '@/hooks';
-import PermissionDialog from '@/components/permission-dialog';
 import CommonDialog from '@/components/common-dialog';
+import HcmAuth from '@/components/auth/auth.vue';
+import { AUTH_UPDATE_MAIN_ACCOUNT } from '@/constants/auth-symbols';
 import HcmFormUser from '@/components/form/user.vue';
 import isEqual from 'lodash/isEqual';
 import { MENU_SERVICE_TICKET_DETAILS } from '@/constants/menu-symbol';
@@ -27,16 +27,7 @@ export default defineComponent({
     const detail = ref<IMainAccountDetail>({});
     const billStore = useBillStore();
 
-    const {
-      showPermissionDialog,
-      handlePermissionConfirm,
-      handlePermissionDialog,
-      handleAuth,
-      permissionParams,
-      authVerifyData,
-    } = useVerify();
-    // provide 预鉴权参数
-    provide('authAction', { authVerifyData, handleAuth, authId: 'main_account_edit' });
+    const editAuthSign = { type: AUTH_UPDATE_MAIN_ACCOUNT };
 
     const getDetail = async () => {
       const { data } = await billStore.main_account_detail(props.accountId);
@@ -142,10 +133,20 @@ export default defineComponent({
       <div class={'account-detail-wrapper'}>
         <p class={'sub-title'}>
           帐号信息
-          <span class={'edit-icon'} onClick={openAccountEditDialog}>
-            <i class={'hcm-icon bkhcm-icon-bianji mr6'} />
-            编辑
-          </span>
+          <HcmAuth sign={editAuthSign} tag='span'>
+            {{
+              default: ({ noPerm }: { noPerm: boolean }) => (
+                <span
+                  class={['edit-icon', { 'hcm-no-permision-text-btn': noPerm }]}
+                  onClick={() => {
+                    if (!noPerm) openAccountEditDialog();
+                  }}>
+                  <i class={'hcm-icon bkhcm-icon-bianji mr6'} />
+                  编辑
+                </span>
+              ),
+            }}
+          </HcmAuth>
         </p>
         <DetailInfo
           detail={detail.value}
@@ -178,13 +179,6 @@ export default defineComponent({
             { prop: 'created_at', name: '创建时间', render: () => timeFormatter(detail.value.created_at) },
             { prop: 'updated_at', name: '修改时间', render: () => timeFormatter(detail.value.updated_at) },
           ]}
-        />
-        {/* 申请权限 */}
-        <PermissionDialog
-          v-model:isShow={showPermissionDialog.value}
-          params={permissionParams.value}
-          onCancel={handlePermissionDialog}
-          onConfirm={handlePermissionConfirm}
         />
 
         {/* 账号信息编辑弹窗 */}

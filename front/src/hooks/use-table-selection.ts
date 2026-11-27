@@ -15,12 +15,12 @@ export default function useTableSelection({ rowKey = 'id', isRowSelectable }: Us
   const selections = ref([]);
   // 用于设置表格刷新后的默认勾选项
   const checked = computed(() => selections.value.map((item) => item[rowKey]));
+  const cloneRow = (row: SelectionType['row']) => structuredClone(toRaw(row));
 
   const handleSelectChange = (selection: SelectionType, isAll = false) => {
     // 全选
     if (isAll && selection.checked) {
-      const selectionClone = structuredClone(toRaw(selection.data));
-      selections.value = selectionClone.filter((row) => isRowSelectable({ row }));
+      selections.value = selection.data.filter((row) => isRowSelectable({ row })).map(cloneRow);
     }
     // 取消全选
     if (isAll && !selection.checked) {
@@ -28,7 +28,7 @@ export default function useTableSelection({ rowKey = 'id', isRowSelectable }: Us
     }
     // 选择某一个
     if (!isAll && selection.checked) {
-      selections.value.push(structuredClone(toRaw(selection.row)));
+      selections.value.push(cloneRow(selection.row));
     }
     // 取消选择某一个
     if (!isAll && !selection.checked) {

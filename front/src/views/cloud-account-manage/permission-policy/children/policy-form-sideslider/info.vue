@@ -48,6 +48,7 @@ const bizId = computed(() => (isBusinessPage ? getBizsId() : 0));
 const handleGoToAccount = (item: LinkPopoverItem) => {
   router.push({
     name: MENU_BUSINESS_CLOUD_ACCOUNT,
+    params: { bizId: bizId.value || undefined },
     query: {
       ...route.query,
       type: 'secondary-account',

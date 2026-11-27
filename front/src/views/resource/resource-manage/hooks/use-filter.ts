@@ -130,10 +130,11 @@ const useFilter = (props: PropsType, config: IUseFilterConfig = {}) => {
     },
   );
 
-  // 搜索数据
+  // 搜索数据。同时监听云厂商：刷新后账号详情异步返回才有 vendor，
+  // 镜像等列表只在这里套上厂商条件，否则会停在全厂商结果。
   watch(
-    searchValue,
-    (val) => {
+    [searchValue, vendorInResourcePage],
+    ([val]) => {
       // 工具函数 - 获取条件值
       const getConditionValue = (field: string, values: any[]): string | number => {
         const tmpValue = values.length > 1 ? values : values[0];
@@ -234,7 +235,8 @@ const useFilter = (props: PropsType, config: IUseFilterConfig = {}) => {
   watch(
     () => props.filter,
     () => {
-      if (/^\/resource\/resource/.test(route.path)) searchValue.value = [];
+      // 资源纳管列表（新 /resource/manage、旧 /resource/resource）的账号 / 云厂商变化后重算查询条件
+      if (/\/resource\/(resource|manage)/.test(route.path)) searchValue.value = [];
     },
     {
       deep: true,

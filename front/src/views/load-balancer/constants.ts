@@ -35,6 +35,7 @@ export enum ListenerDeviceType {
 export enum RsDeviceType {
   UNBIND = 'unbind',
   BATCH_EXPORT = 'batch_export',
+  COPY = 'copy',
   ADJUST = 'adjust',
   INFO = 'info',
 }

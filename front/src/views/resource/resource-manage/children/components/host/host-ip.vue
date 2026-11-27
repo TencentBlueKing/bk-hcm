@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import { ref, h, watch, inject, computed, withDirectives } from 'vue';
+import { ref, h, watch, inject, computed, withDirectives, resolveComponent } from 'vue';
 import { bkTooltips, Button, Message } from 'bkui-vue';
 import { useResourceStore } from '@/store/resource';
 import useQueryList from '../../../hooks/use-query-list';
-import bus from '@/common/bus';
+import { useResourceDetailAuth } from '../../../hooks/use-resource-detail-route';
 
 const props = defineProps({
   data: {
@@ -16,17 +16,8 @@ const props = defineProps({
 
 const resourceStore = useResourceStore();
 const isResourcePage: any = inject('isResourcePage');
-const authVerifyData: any = inject('authVerifyData');
-
-const actionName = computed(() => {
-  // 资源下没有业务ID
-  return isResourcePage.value ? 'iaas_resource_operate' : 'biz_iaas_resource_operate';
-});
-
-// 权限弹窗 bus通知最外层弹出
-const showAuthDialog = (authActionName: string) => {
-  bus.$emit('auth', authActionName);
-};
+const { authPending, updateSign } = useResourceDetailAuth(computed(() => props.data?.account_id));
+const HcmAuthComp = resolveComponent('hcm-auth');
 
 // 状态
 const showChangeIP = ref(false);
@@ -93,31 +84,26 @@ const columns = ref([
         //   ],
         // ),
         h(
-          'span',
+          HcmAuthComp,
+          { sign: updateSign.value, ignore: authPending.value, tag: 'span' },
           {
-            onClick() {
-              showAuthDialog(actionName.value);
-            },
-          },
-          [
-            withDirectives(
-              h(
-                Button,
-                {
-                  text: true,
-                  theme: 'primary',
-                  disabled:
-                    !authVerifyData.value?.permissionAction[actionName.value] ||
-                    (isResourcePage.value && props.data?.bk_biz_id !== -1),
-                  onClick() {
-                    handleToggleShowUnbind(data);
+            default: ({ noPerm }: { noPerm: boolean }) =>
+              withDirectives(
+                h(
+                  Button,
+                  {
+                    text: true,
+                    theme: 'primary',
+                    disabled: noPerm || authPending.value || (isResourcePage.value && props.data?.bk_biz_id !== -1),
+                    onClick() {
+                      handleToggleShowUnbind(data);
+                    },
                   },
-                },
-                ['解绑'],
+                  ['解绑'],
+                ),
+                [[bkTooltips, noPerm ? { disabled: true } : generateTooltipsOptions()]],
               ),
-              [[bkTooltips, generateTooltipsOptions()]],
-            ),
-          ],
+          },
         ),
       ];
     },
@@ -268,11 +254,6 @@ const getNetWorkList = async () => {
 };
 
 const generateTooltipsOptions = () => {
-  if (!authVerifyData.value?.permissionAction?.[actionName.value])
-    return {
-      content: '当前用户无权限操作该按钮',
-      disabled: authVerifyData.value?.permissionAction?.[actionName.value],
-    };
   if (isResourcePage.value && props.data?.bk_biz_id !== -1)
     return {
       content: '该主机已分配到业务，仅可在业务下操作',
@@ -317,16 +298,16 @@ watch(
 
 <template>
   <bk-loading :loading="isLoading">
-    <span @click="showAuthDialog(actionName)">
+    <hcm-auth :sign="updateSign" :ignore="authPending" tag="span" v-slot="{ noPerm }">
       <bk-button
         class="btn"
         theme="primary"
-        :disabled="isBindBusiness || !authVerifyData?.permissionAction[actionName]"
+        :disabled="isBindBusiness || noPerm || authPending"
         @click="handleToggleShowBind(true)"
       >
         绑定
       </bk-button>
-    </span>
+    </hcm-auth>
     <bk-table class="mt16" row-hover="auto" :columns="columns" :data="datas" show-overflow-tooltip />
   </bk-loading>
   <!-- <bk-dialog

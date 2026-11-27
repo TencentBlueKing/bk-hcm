@@ -50,6 +50,31 @@ export interface IVerifyParams {
   resources: IVerifyResourceItem[];
 }
 
+// 权限验证结果中的资源实例
+export interface IVerifyResourceInstance {
+  type: string;
+  type_name: string;
+  id: number | string;
+  name: string;
+}
+
+// Permission 数据类型
+export interface IPermission {
+  actions: {
+    id: string;
+    name: string;
+    related_resource_types: {
+      instances?: IVerifyResourceInstance[][];
+      system_id: string;
+      system_name: string;
+      type: string;
+      type_name: string;
+    }[];
+  }[];
+  system_id: string;
+  system_name: string;
+}
+
 // 一个权限点的定义
 export interface IAuthDefinition {
   // iam的permission.actions[number].id，用于读取权限信息并展示
@@ -116,6 +141,53 @@ export const getVerifyParams = (sign: IAuthSign | IAuthSign[]) => {
   return { resources };
 };
 
+/**
+ * 从完整的 permission 数据中提取出指定 sign 对应的 permission
+ * @param sign 权限标识
+ * @param permission 完整的 permission 数据
+ * @returns 提取后的 permission 数据
+ */
+export const extractSignPermission = (sign: IAuthSign | IAuthSign[], permission: IPermission): IPermission | null => {
+  if (!permission?.actions) {
+    return null;
+  }
+
+  // 获取当前 sign 的权限定义 id
+  const authIds = getAuthDefs(sign).map((item) => item.id);
+
+  // 获取当前 sign 的资源配置
+  const resources = getAuthResources(sign);
+
+  const { actions, ...others } = permission;
+
+  const currentActions = actions
+    // 先通过 id 过滤，只保留当前 sign 所对应的 action
+    .filter((item) => authIds.includes(item.id))
+    .map((item) => ({
+      ...item,
+      related_resource_types: item.related_resource_types.map((resourceItem) => ({
+        ...resourceItem,
+        // TODO: 支持多层级
+        // 只保留当前 sign 所对应需要申请的资源实例
+        // 目前的业务场景没有多层级，可以先打平处理，为满足内部数据格式需要手动构造为二层结构且过滤掉空数据兼容未指定实例的情况
+        instances: [
+          resourceItem?.instances
+            ?.flat()
+            .filter((instance) =>
+              resources.some((resource) =>
+                [String(resource.bk_biz_id), String(resource.resource_id)].includes(String(instance.id)),
+              ),
+            ),
+        ].filter(Boolean) as IVerifyResourceInstance[][],
+      })),
+    }));
+
+  return {
+    actions: currentActions,
+    ...others,
+  };
+};
+
 const bizTransform = (definition: IAuthDefinition, relation: IAuthSign['relation']) =>
   basicTransform(definition, relation[0] ? { bk_biz_id: relation[0] as number } : {});
 
@@ -153,8 +225,15 @@ export const AUTH_DEFINITIONS = Object.freeze<Record<symbol, IAuthDefinition>>({
   },
   [authSymbol.AUTH_UPDATE_ACCOUNT]: {
     id: 'account_edit',
-    action: 'import',
+    action: 'update',
     resourceType: 'account',
+    transform: (definition, relation) => basicTransform(definition, { resource_id: relation[0] }),
+  },
+  [authSymbol.AUTH_DELETE_ACCOUNT]: {
+    id: 'account_delete',
+    action: 'delete',
+    resourceType: 'account',
+    transform: (definition, relation) => basicTransform(definition, { resource_id: relation[0] }),
   },
   [authSymbol.AUTH_ACCESS_BIZ]: {
     id: 'biz_access',

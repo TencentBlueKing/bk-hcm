@@ -32,12 +32,14 @@ const { getBizsId } = useWhereAmI();
 const handleGoToSecondaryAccount = (data: IPermissionTemplateItem) => {
   routeAction.open({
     name: MENU_BUSINESS_CLOUD_ACCOUNT,
+    params: { bizId: getBizsId() },
     query: { type: 'secondary-account', id: data?.account_id },
   });
 };
 const handleGoToTertiaryAccount = (item: LinkPopoverItem) => {
   routeAction.open({
     name: MENU_BUSINESS_CLOUD_ACCOUNT,
+    params: { bizId: getBizsId() },
     query: { type: 'tertiary-account', id: item.id as string },
   });
 };

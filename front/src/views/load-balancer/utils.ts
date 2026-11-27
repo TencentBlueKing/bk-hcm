@@ -1,6 +1,12 @@
+import { LocationQuery } from 'vue-router';
 import { CLB_SPECS } from '@/common/constant';
 import { QueryRuleOPEnum, RulesItem } from '@/typings';
-import { LOAD_BALANCER_INSTANCE_SPEC_NAME, LoadBalancerInstanceSpec } from './constants';
+import {
+  ActiveQueryKey,
+  ClbDetailsTabKey,
+  LOAD_BALANCER_INSTANCE_SPEC_NAME,
+  LoadBalancerInstanceSpec,
+} from './constants';
 
 type InstanceSpecSource = { exclusive?: number; sla_type?: string };
 
@@ -51,4 +57,41 @@ export const buildLoadBalancerInstanceSpecFilterRules = (value: string | string[
   }
 
   return rules.length === 1 ? rules[0] : { op: QueryRuleOPEnum.OR, rules };
+};
+
+const CLB_DETAILS_TAB_VALUES = new Set<string>(Object.values(ClbDetailsTabKey));
+
+export const resolveClbDetailsTab = (tab: unknown): ClbDetailsTabKey => {
+  return typeof tab === 'string' && CLB_DETAILS_TAB_VALUES.has(tab)
+    ? (tab as ClbDetailsTabKey)
+    : ClbDetailsTabKey.LISTENER;
+};
+
+/**
+ * 仅保留 CLB 详情页跨实例 / 跨 tab 切换时必要的公共路由参数（当前 tab 标识与返回来源标记），
+ * 避免分页、筛选、排序、一次性跳转标记等单 tab 业务参数残留或串扰。
+ */
+export const pickClbDetailsBaseQuery = (
+  query: LocationQuery,
+  options?: { tab?: ClbDetailsTabKey },
+): Record<string, string> => {
+  const nextQuery: Record<string, string> = {};
+
+  if (options?.tab) {
+    nextQuery[ActiveQueryKey.DETAILS] = options.tab;
+  } else if (
+    typeof query?.[ActiveQueryKey.DETAILS] === 'string' &&
+    CLB_DETAILS_TAB_VALUES.has(query[ActiveQueryKey.DETAILS])
+  ) {
+    nextQuery[ActiveQueryKey.DETAILS] = query[ActiveQueryKey.DETAILS];
+  }
+
+  if (query && Object.hasOwn(query, '_f')) {
+    const historyFlag = Array.isArray(query._f) ? query._f[0] : query._f;
+    if (historyFlag !== null && historyFlag !== undefined) {
+      nextQuery._f = String(historyFlag);
+    }
+  }
+
+  return nextQuery;
 };

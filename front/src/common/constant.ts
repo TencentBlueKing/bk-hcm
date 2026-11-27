@@ -65,7 +65,7 @@ export const RESOURCE_TYPES = [
   },
   {
     name: '弹性 IP',
-    type: 'ip',
+    type: 'eip',
   },
   {
     name: '路由表',
@@ -495,40 +495,6 @@ export const LANGUAGE_TYPE = {
 
 export const SEARCH_VALUE_IDS = [
   'cloud_id', // 云ID
-];
-
-export const RESOURCE_TABS = [
-  {
-    key: '/resource/resource/',
-    label: '资源管理',
-  },
-  {
-    key: '/resource/resource/account',
-    label: '账号信息',
-  },
-  {
-    key: '/resource/resource/record',
-    label: '操作记录',
-  },
-  {
-    key: '/resource/resource/recycle',
-    label: '回收站',
-  },
-];
-
-export const RESOURCE_DETAIL_TABS = [
-  {
-    key: '/resource/resource/account/detail',
-    label: '基本信息',
-  },
-  {
-    key: '/resource/resource/account/resource',
-    label: '资源状态',
-  },
-  {
-    key: '/resource/resource/account/manage',
-    label: '用户列表',
-  },
 ];
 
 export const RESOURCE_TYPES_MAP = {

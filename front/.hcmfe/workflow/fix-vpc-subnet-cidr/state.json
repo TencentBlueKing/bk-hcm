@@ -1,0 +1,94 @@
+{
+  "id": "fix-vpc-subnet-cidr",
+  "title": "修复 VPC 提单子网 CIDR 被写成 VPC 网段",
+  "currentStage": "done",
+  "createdAt": "2026-10-20T06:40:57.711Z",
+  "updatedAt": "2026-10-20T07:36:07.239Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/fix-vpc-subnet-cidr/coding.md",
+        "kind": "file",
+        "addedAt": "2026-10-20T07:07:36.741Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/fix-vpc-subnet-cidr/test.md",
+        "kind": "file",
+        "addedAt": "2026-10-20T07:12:03.838Z"
+      }
+    ]
+  },
+  "approvals": {
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-10-20T07:11:32.991Z",
+      "note": "用户确认编码改动可作为测试阶段依据，继续进入测试。"
+    },
+    "test": {
+      "stage": "test",
+      "approvedAt": "2026-10-20T07:28:17.395Z",
+      "note": "用户确认腾讯云 P0 通过，其余云沿用同一组装不再补测，文档收口无缺口，进入完成。"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-10-20T06:40:57.711Z",
+      "gitHead": "8225b1f7707d6882b4a0e66976cfa23689fe42e4"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-10-20T07:11:32.991Z",
+      "note": "用户确认编码改动可作为测试阶段依据，继续进入测试。"
+    },
+    {
+      "from": "test",
+      "to": "done",
+      "at": "2026-10-20T07:28:17.395Z",
+      "note": "用户确认腾讯云 P0 通过，其余云沿用同一组装不再补测，文档收口无缺口，进入完成。"
+    }
+  ],
+  "branch": "fix-vpc-subnet-cidr",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598139198037"
+  },
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "completed",
+      "at": "2026-10-20T06:57:05.020Z",
+      "note": "澄清描述已回写，原需求描述保留快照原文。owner 未变更。"
+    },
+    "hcm-docs-closeout": {
+      "status": "completed",
+      "at": "2026-10-20T07:28:13.238Z",
+      "note": "中途已沉淀 service 模块，收口 gaps 为空（drafted 且无漂移）。"
+    },
+    "hcm-tapd-sync-done": {
+      "status": "completed",
+      "at": "2026-10-20T07:36:07.239Z",
+      "note": "story 1069995598139198037 最终 status key 为 status_14。owner 未变更。无 parent_id，不需 rollup。"
+    }
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "src/views/service/service-apply/hooks/use-vpc-form-data.ts"
+      ],
+      "contentFingerprint": "dc8725261ac8ef58af6bc4f8773606dae273354d",
+      "codeBaseline": "627f5d17375abfdfce922452bbad481568557cf2",
+      "seatedAt": "2026-10-20T07:08:14.898Z"
+    }
+  }
+}

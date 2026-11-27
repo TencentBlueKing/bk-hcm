@@ -1,5 +1,4 @@
 import { type App } from 'vue';
-import PermissionDialog from '@/components/permission-dialog';
 
 // 搜索组件
 import SearchAccount from './search/account.vue';
@@ -30,7 +29,6 @@ import FormList from './form/list.vue';
 import Auth from './auth/auth.vue';
 
 const components = [
-  PermissionDialog,
   SearchAccount,
   SearchRegion,
   SearchEnum,

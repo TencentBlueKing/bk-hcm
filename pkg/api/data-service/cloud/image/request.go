@@ -20,7 +20,10 @@
 package image
 
 import (
+	"errors"
+
 	coreimage "hcm/pkg/api/core/cloud/image"
+	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/validator"
 	"hcm/pkg/runtime/filter"
@@ -89,6 +92,7 @@ type ImageUpdate[T coreimage.Extension] struct {
 	ID        string        `json:"id" validate:"required"`
 	State     string        `json:"state"`
 	OsType    enumor.OsType `json:"os_type"`
+	Type      string        `json:"type"`
 	Extension *T            `json:"extension"`
 }
 
@@ -105,4 +109,18 @@ type DeleteReq struct {
 // Validate ...
 func (req *DeleteReq) Validate() error {
 	return validator.Validate.Struct(req)
+}
+
+// UpdateImageBizTagReq 更新镜像业务标签请求
+type UpdateImageBizTagReq struct {
+	// BkBizID 业务ID，-1 表示取消业务绑定（未分配），正整数表示绑定到具体业务
+	BkBizID int64 `json:"bk_biz_id"`
+}
+
+// Validate ...
+func (req *UpdateImageBizTagReq) Validate() error {
+	if req.BkBizID != constant.UnassignedBiz && req.BkBizID <= 0 {
+		return errors.New("bk_biz_id must be -1 (unassigned) or greater than 0")
+	}
+	return nil
 }

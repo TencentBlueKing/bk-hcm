@@ -2,10 +2,13 @@
 import { ref, watch } from 'vue';
 import DetailInfo from '../../../common/info/detail-info';
 import { useResourceStore } from '@/store/resource';
-import { useRouter, useRoute } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '../../../common/info-list/types';
+import routerAction from '@/router/utils/action';
+import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { MENU_BUSINESS_VPC_DETAILS, MENU_RESOURCE_ACCOUNT_DETAIL, MENU_RESOURCE_DETAIL } from '@/constants/menu-symbol';
 
 const props = defineProps({
   detail: {
@@ -14,8 +17,8 @@ const props = defineProps({
 });
 
 const resourceStore = useResourceStore();
-const router = useRouter();
 const route = useRoute();
+const { whereAmI } = useWhereAmI();
 
 const { getRegionName } = useRegionsStore();
 
@@ -36,8 +39,8 @@ const fileds = ref<FieldList>([
   {
     name: '账号',
     prop: 'account_id',
-    link(val: string) {
-      return `/#/resource/account/detail/?accountId=${val}&id=${val}`;
+    txtBtn(accountId: string) {
+      routerAction.redirect({ name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId } }, { history: true });
     },
   },
 ]);
@@ -97,27 +100,21 @@ const vpcField = {
   name: '所属网络',
   prop: 'vpc_id',
   txtBtn(id: string) {
-    const type = 'vpc';
-    const routeInfo: any = {
-      query: {
-        id,
-        type: props.detail.vendor,
-      },
-    };
-    // 业务下
-    if (route.path.includes('business')) {
+    const routeInfo: any = {};
+    if (whereAmI.value === Senarios.business) {
       Object.assign(routeInfo, {
-        name: `${type}BusinessDetail`,
+        name: MENU_BUSINESS_VPC_DETAILS,
+        params: { bizId: route.params.bizId, id },
+        query: { vendor: props.detail.vendor },
       });
     } else {
       Object.assign(routeInfo, {
-        name: 'resourceDetail',
-        params: {
-          type,
-        },
+        name: MENU_RESOURCE_DETAIL,
+        params: { resourceType: 'vpc', id },
+        query: { accountId: route.query.accountId, vendor: props.detail.vendor },
       });
     }
-    router.push(routeInfo);
+    routerAction.redirect(routeInfo, { history: true });
   },
 };
 

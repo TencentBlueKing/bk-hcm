@@ -1,21 +1,48 @@
-import { computed, defineComponent, PropType, ref, watchEffect } from 'vue';
+import { computed, defineComponent, PropType, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { Dialog, SearchSelect, Table } from 'bkui-vue';
 import { ISearchItem } from 'bkui-vue/lib/search-select/utils';
-import { SpecAvailability } from '@/api/load_balancers/apply-clb/types';
 import { CLB_SPECS } from '@/common/constant';
-import { CLB_SPEC_TYPE_COLUMNS_MAP } from '@/constants';
+import { CLB_SPEC_TYPE_COLUMNS_MAP } from '@/constants/clb';
+import { getSimpleConditionBySearchSelect } from '@/utils/search';
+import type { SpecAvailability } from '@/api/load_balancers/apply-clb/types';
+import { ModelPropertyColumn } from '@/model/typings';
 
-import CommonLocalTable from '@/components/CommonLocalTable';
+import Empty from '@/components/empty';
+import ModalFooter from '@/components/modal/modal-footer.vue';
+import './index.scss';
+
+interface IClbSlaSpecRow {
+  SlaType: string;
+  SlaName: string;
+  MaxConn?: number;
+  MaxCps?: number;
+  MaxOutBits?: number;
+  MaxInBits?: number;
+  MaxQps?: number;
+}
+
+const formatCount = (value?: number) => value?.toLocaleString('en-US');
 
 /**
- * 负载均衡规格类型选择对话框
+ * 负载均衡实例规格选择对话框
+ *
+ * 规格中文名与性能指标由前端静态表维护。
+ * 静态表只有一档带宽上限。DescribeSlaCapacity 的示例里 MaxInBits 与 MaxOutBits 相同，
+ * 产品规格也只公布这一档上限，因此入口流量沿用同一数值。
  */
 export default defineComponent({
   name: 'LbSpecTypeSelectDialog',
   props: {
     modelValue: Boolean,
+    // 已选规格编码
     slaType: String,
-    specAvailabilitySet: Array as PropType<Array<SpecAvailability>>,
+    // 当前可用区下各规格的可用性（来自 load_balancers/resources/describe）。
+    // 默认空数组表示没有可用规格，按库存过滤后可选列表为空，不再表示不过滤。
+    specAvailabilitySet: {
+      type: Array as PropType<Array<SpecAvailability>>,
+      default: () => [],
+    },
   },
   emits: ['update:modelValue', 'confirm', 'hidden'],
   setup(props, { emit }) {
@@ -25,120 +52,188 @@ export default defineComponent({
       get() {
         return props.modelValue;
       },
-      set(val) {
+      set(val: boolean) {
         emit('update:modelValue', val);
       },
     });
 
-    // 搜索条件
-    const searchData: Array<ISearchItem> = [
-      { id: 'SpecType', name: '规格类型' },
-      { id: 'connectionsPerMinute', name: '每分钟并发连接数' },
-      { id: 'newConnectionsPerSecond', name: '每秒新建连接数' },
-      { id: 'queriesPerSecond', name: '每秒查询数' },
-      { id: 'bandwidthLimit', name: '带宽上限' },
+    const selectedSlaType = ref(props.slaType || '');
+    const searchValue = ref<Array<any>>([]);
+
+    const columns: Array<ModelPropertyColumn> = [
+      {
+        id: 'SlaType',
+        name: t('性能容量型规格'),
+        type: 'string',
+      },
+      {
+        id: 'SlaName',
+        name: t('规格名称'),
+        type: 'string',
+        width: 100,
+      },
+      {
+        id: 'MaxConn',
+        name: t('并发连接数上限(个/秒)'),
+        type: 'number',
+        meta: { display: { format: formatCount } },
+        width: 180,
+      },
+      {
+        id: 'MaxCps',
+        name: t('新建连接数上限(个/秒)'),
+        type: 'number',
+        meta: { display: { format: formatCount } },
+        width: 180,
+      },
+      {
+        id: 'MaxOutBits',
+        name: t('最大出口流量(Mbps)'),
+        type: 'number',
+        meta: { display: { format: formatCount } },
+      },
+      {
+        id: 'MaxInBits',
+        name: t('最大入口流量(Mbps)'),
+        type: 'number',
+        meta: { display: { format: formatCount } },
+      },
+      {
+        id: 'MaxQps',
+        name: t('最大qps(个/秒)'),
+        type: 'number',
+        meta: { display: { format: formatCount } },
+      },
     ];
 
-    // 当前选中的规格类型
-    const selectedLbSpecType = ref(props.slaType || '');
+    const usableSlaList = computed<Array<IClbSlaSpecRow>>(() => {
+      // 保留上游的库存过滤和购买限制，其他未收录规格仍可按接口编码展示。
+      const availableSlaTypes = new Set(
+        props.specAvailabilitySet
+          .filter(({ Availability }) => Availability !== 'Unavailable')
+          .map(({ SpecType }) => SpecType)
+          .filter(
+            (slaType): slaType is string =>
+              !!slaType && slaType !== 'shared' && slaType !== 'clb.c1.small' && !slaType.startsWith('clb.c5.'),
+          ),
+      );
 
-    // 表格字段
-    const columns = [
-      {
-        label: '',
-        width: 40,
-        minWidth: 40,
-        showOverflowTooltip: false,
-        render: ({ row }: any) => (
-          <bk-radio
-            v-model={selectedLbSpecType.value}
-            label={row.SpecType}
-            disabled={row.Availability === 'Unavailable'}>
-            　
-          </bk-radio>
-        ),
-      },
-      {
-        label: t('型号'),
-        field: 'SpecType',
-        render: ({ row }: { row: SpecAvailability }) => CLB_SPECS[row.SpecType] ?? row.SpecType ?? '--',
-      },
-      {
-        label: t('每分钟并发连接数（个）'),
-        field: 'connectionsPerMinute',
-        render: ({ cell }: { cell?: number }) => cell?.toLocaleString('en-US') ?? '--',
-      },
-      {
-        label: t('每秒新建连接数（个）'),
-        field: 'newConnectionsPerSecond',
-        render: ({ cell }: { cell?: number }) => cell?.toLocaleString('en-US') ?? '--',
-      },
-      {
-        label: t('每秒查询数（个）'),
-        field: 'queriesPerSecond',
-        render: ({ cell }: { cell?: number }) => cell?.toLocaleString('en-US') ?? '--',
-      },
-      {
-        label: t('带宽上限（Mbps）'),
-        field: 'bandwidthLimit',
-        render: ({ cell }: { cell?: number }) => cell?.toLocaleString('en-US') ?? '--',
-      },
-      {
-        label: t('可用性'),
-        field: 'Availability',
-        render: ({ cell }: { cell: 'Available' | 'Unavailable' }) => {
-          return <bk-tag theme={cell === 'Available' ? 'success' : 'danger'}>{cell}</bk-tag>;
-        },
-      },
-    ];
-    // 表格数据
-    const tableData = ref<Array<SpecAvailability>>([]);
-
-    // click-handler - 点击表格row触发的钩子
-    const handleRowClick = (row: SpecAvailability) => {
-      if (row.Availability === 'Unavailable') return;
-      selectedLbSpecType.value = row.SpecType;
-    };
-
-    // submit-handler - 选择机型
-    const handleSelectClbSpecType = () => {
-      emit('confirm', {
-        slaType: selectedLbSpecType.value ? selectedLbSpecType.value : 'shared',
-        bandwidthLimit: CLB_SPEC_TYPE_COLUMNS_MAP[selectedLbSpecType.value]?.bandwidthLimit,
-      });
-    };
-
-    watchEffect(() => {
-      tableData.value = (props.specAvailabilitySet ?? [])
-        // shared不展示
-        .filter((item) => item.SpecType !== 'shared')
-        .map((item) => {
-          const { connectionsPerMinute, newConnectionsPerSecond, queriesPerSecond, bandwidthLimit } =
-            CLB_SPEC_TYPE_COLUMNS_MAP[item.SpecType] ?? {};
-          return { ...item, connectionsPerMinute, newConnectionsPerSecond, queriesPerSecond, bandwidthLimit };
-        })
-        .sort((a, b) => (a.bandwidthLimit ?? Infinity) - (b.bandwidthLimit ?? Infinity));
+      return Array.from(availableSlaTypes, (SlaType) => {
+        const spec = CLB_SPEC_TYPE_COLUMNS_MAP[SlaType];
+        return {
+          SlaType,
+          SlaName: CLB_SPECS[SlaType] ?? SlaType,
+          MaxConn: spec?.connectionsPerMinute,
+          MaxCps: spec?.newConnectionsPerSecond,
+          MaxQps: spec?.queriesPerSecond,
+          MaxOutBits: spec?.bandwidthLimit,
+          MaxInBits: spec?.bandwidthLimit,
+        };
+      }).sort((a, b) => (a.MaxOutBits ?? Number.MAX_VALUE) - (b.MaxOutBits ?? Number.MAX_VALUE));
     });
 
+    const canConfirm = computed(() => usableSlaList.value.some(({ SlaType }) => SlaType === selectedSlaType.value));
+
+    const searchData = computed<Array<ISearchItem>>(() => [
+      {
+        id: 'sla_types',
+        name: t('性能容量型规格'),
+        children: usableSlaList.value.map(({ SlaType }) => ({ id: SlaType, name: SlaType })),
+        multiple: true,
+      },
+    ]);
+
+    const slaList = computed(() => {
+      const { sla_types: slaTypes } = getSimpleConditionBySearchSelect(searchValue.value) ?? {};
+      if (!slaTypes?.length) return usableSlaList.value;
+      const selected = new Set(slaTypes);
+      return usableSlaList.value.filter(({ SlaType }) => selected.has(SlaType));
+    });
+
+    watch(
+      () => props.modelValue,
+      (visible) => {
+        if (!visible) searchValue.value = [];
+      },
+    );
+
+    watch(
+      () => props.slaType,
+      (val) => {
+        selectedSlaType.value = val || '';
+      },
+    );
+
+    const handleRowClick = (row: IClbSlaSpecRow) => {
+      selectedSlaType.value = row.SlaType;
+    };
+
+    const handleConfirm = () => {
+      const result = usableSlaList.value.find(({ SlaType }) => SlaType === selectedSlaType.value);
+      if (!result) return;
+      emit('confirm', {
+        slaType: result.SlaType,
+        slaName: result.SlaName,
+        bandwidthLimit: result.MaxOutBits,
+      });
+      isShow.value = false;
+    };
+
+    const handleClosed = () => {
+      isShow.value = false;
+    };
+
     return () => (
-      <bk-dialog
-        v-model:isShow={isShow.value}
-        title='选择实例规格'
-        width='60vw'
-        onConfirm={handleSelectClbSpecType}
-        onHidden={() => emit('hidden')}>
-        <CommonLocalTable
-          searchOptions={{ searchData }}
-          tableOptions={{
-            rowKey: 'SpecType',
-            columns,
-            extra: {
-              onRowClick: (_: any, row: any) => handleRowClick(row),
-            },
-          }}
-          tableData={tableData.value}
-        />
-      </bk-dialog>
+      <Dialog v-model:is-show={isShow.value} title={t('选择实例规格')} width='60vw' onHidden={() => emit('hidden')}>
+        {{
+          default: () => (
+            <>
+              <SearchSelect
+                class='lb-spec-type-search'
+                v-model={searchValue.value}
+                data={searchData.value}
+                valueBehavior='need-key'
+              />
+              <Table
+                data={slaList.value}
+                rowKey='SlaType'
+                height={360}
+                show-overflow-tooltip
+                onRowClick={(_: any, row: IClbSlaSpecRow) => handleRowClick(row)}>
+                {{
+                  default: () => (
+                    <>
+                      <bk-table-column width='40' min-width='40' show-overflow-tooltip={false}>
+                        {{
+                          default: ({ row }: { row: IClbSlaSpecRow }) => (
+                            <bk-radio v-model={selectedSlaType.value} label={row.SlaType}>
+                              　
+                            </bk-radio>
+                          ),
+                        }}
+                      </bk-table-column>
+                      {columns.map((column) => (
+                        <bk-table-column key={column.id} prop={column.id} label={column.name} width={column.width}>
+                          {{
+                            default: ({ row }: { row: Record<string, any> }) => (
+                              <display-value property={column} value={row[column.id]} display={column.meta?.display} />
+                            ),
+                          }}
+                        </bk-table-column>
+                      ))}
+                    </>
+                  ),
+                  empty: () => {
+                    if (slaList.value.length) return null;
+                    return <Empty />;
+                  },
+                }}
+              </Table>
+            </>
+          ),
+          footer: () => <ModalFooter disabled={!canConfirm.value} onConfirm={handleConfirm} onClosed={handleClosed} />,
+        }}
+      </Dialog>
     );
   },
 });

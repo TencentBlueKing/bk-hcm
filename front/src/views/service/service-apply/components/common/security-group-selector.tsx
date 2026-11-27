@@ -15,6 +15,8 @@ import useColumns from '@/views/resource/resource-manage/hooks/use-columns';
 import { SECURITY_GROUP_RULE_TYPE, VendorEnum } from '@/common/constant';
 import { QueryRuleOPEnum } from '@/typings';
 import http from '@/http';
+import routerAction from '@/router/utils/action';
+import { MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT, MENU_RESOURCE_RESOURCE_LIST } from '@/constants/menu-symbol';
 
 export default defineComponent({
   props: {
@@ -34,7 +36,7 @@ export default defineComponent({
   setup(props, { slots, expose }) {
     const { t } = useI18n();
     const resourceStore = useResourceStore();
-    const { isServicePage, whereAmI, getBusinessApiPath } = useWhereAmI();
+    const { isServicePage, whereAmI, getBusinessApiPath, getBizsId } = useWhereAmI();
     const isDialogShow = ref(false);
     const cache: any = { securityList: [], securityGroupRules: [] }; // 缓存：记录编辑前的状态
     const updateCache = () => {
@@ -244,11 +246,11 @@ export default defineComponent({
                   theme='primary'
                   text
                   onClick={() => {
-                    const url =
+                    routerAction.open(
                       whereAmI.value === Senarios.business
-                        ? '/#/business/security'
-                        : '/#/resource/resource?type=security';
-                    window.open(url, '_blank');
+                        ? { name: MENU_BUSINESS_SECURITY_GROUP_MANAGEMENT, params: { bizId: getBizsId() } }
+                        : { name: MENU_RESOURCE_RESOURCE_LIST, params: { resourceType: 'security' } },
+                    );
                   }}>
                   {t('新建安全组')}
                 </Button>

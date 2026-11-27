@@ -7,6 +7,7 @@ import useTableSettings from '@/hooks/use-table-settings';
 import useSelection from '@/views/resource/resource-manage/hooks/use-selection';
 import routeAction from '@/router/utils/action';
 import { useAccountStore } from '@/store/account';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { AUTH_BIZ_DELETE_SUB_ACCOUNT, AUTH_BIZ_UPDATE_SUB_ACCOUNT } from '@/constants/auth-symbols';
 import { MENU_BUSINESS_CLOUD_ACCOUNT } from '@/constants/menu-symbol';
 import type { ISubAccountItem } from '@/store/cloud-account-manage/tertiary-account';
@@ -24,6 +25,7 @@ const emit = defineEmits<{
 }>();
 
 const accountStore = useAccountStore();
+const { getBizsId } = useWhereAmI();
 
 export interface IDataListProps {
   columns: ModelPropertyColumn[];
@@ -85,6 +87,7 @@ const handleGoToPage = (row: ISubAccountItem, column: ModelPropertyColumn, type:
   const { searchField, valueField } = column?.meta?.search?.props;
   routeAction.open({
     name: MENU_BUSINESS_CLOUD_ACCOUNT,
+    params: { bizId: getBizsId() },
     query: { type, filter: `${searchField}=${get(row, valueField)}` },
   });
 };

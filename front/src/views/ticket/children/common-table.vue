@@ -5,8 +5,9 @@
 <script setup lang="ts">
 import { h, inject } from 'vue';
 import { APPLICATION_STATUS_MAP, APPLICATION_TYPE_MAP, searchData } from '../constants';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { Button } from 'bkui-vue';
+import routerAction from '@/router/utils/action';
 import StatusAbnormal from '@/assets/image/Status-abnormal.png';
 import StatusLoading from '@/assets/image/status_loading.png';
 import StatusSuccess from '@/assets/image/success-account.png';
@@ -23,7 +24,6 @@ interface IProps {
 
 const props = withDefaults(defineProps<IProps>(), {});
 
-const router = useRouter();
 const route = useRoute();
 const isBusinessPage = inject<boolean>('isBusinessPage');
 const columns = [
@@ -45,13 +45,16 @@ const columns = [
           text: true,
           theme: 'primary',
           onClick: () => {
-            router.push({
-              name: isBusinessPage ? MENU_BUSINESS_TICKET_DETAILS : MENU_SERVICE_TICKET_DETAILS,
-              query: {
-                ...route.query,
-                id: data.id,
+            routerAction.redirect(
+              {
+                name: isBusinessPage ? MENU_BUSINESS_TICKET_DETAILS : MENU_SERVICE_TICKET_DETAILS,
+                query: {
+                  ...route.query,
+                  id: data.id,
+                },
               },
-            });
+              { history: true },
+            );
           },
         },
         data.sn,

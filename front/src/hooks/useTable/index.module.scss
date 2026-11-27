@@ -9,6 +9,7 @@
 
     .operate-btn-groups {
       display: flex;
+      flex-shrink: 0;
       align-items: center;
 
       :global(.bk-button) {
@@ -23,10 +24,13 @@
     .table-search-selector {
       margin-left: auto;
       width: 500px;
+      min-width: 0;
+      max-width: 100%;
     }
 
     .operation-bar-end {
       display: flex;
+      flex-shrink: 0;
       align-items: center;
       margin-left: 24px;
     }

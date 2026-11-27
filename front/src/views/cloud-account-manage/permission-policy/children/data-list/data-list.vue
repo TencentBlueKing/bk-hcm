@@ -66,6 +66,7 @@ const handleEditAccount = (row: IPermissionPolicyItem) => {
 const handleGoToAccount = (item: LinkPopoverItem) => {
   routeAction.open({
     name: MENU_BUSINESS_CLOUD_ACCOUNT,
+    params: { bizId: bizId.value || undefined },
     query: { type: 'secondary-account', id: item.id },
   });
 };

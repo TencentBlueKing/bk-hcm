@@ -88,8 +88,11 @@ const handleConfirm = async () => {
   if (res.data?.task_management_id) {
     routerAction.open({
       name: MENU_BUSINESS_TASK_MANAGEMENT_DETAILS,
-      query: { bizs: currentGlobalBusinessId.value },
-      params: { resourceType: ResourceTypeEnum.CLB, id: res.data.task_management_id },
+      params: {
+        bizId: currentGlobalBusinessId.value,
+        resourceType: ResourceTypeEnum.CLB,
+        id: res.data.task_management_id,
+      },
     });
   } else {
     Message({ theme: 'success', message: '删除成功' });

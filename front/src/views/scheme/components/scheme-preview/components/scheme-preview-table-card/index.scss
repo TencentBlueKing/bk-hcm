@@ -18,6 +18,7 @@
       font-weight: 700;
       font-size: 14px;
       color: #63656E;
+
       // margin-left: 13.31px;
       margin-right: 12px;
       white-space: nowrap;
@@ -54,14 +55,14 @@
   }
 
   .scheme-preview-table-card-header-closed {
-    background: #FFFFFF;
+    background: #FFF;
     box-shadow: 0 2px 4px 0 #1919290d;
     border-radius: 2px;
   }
 
   .scheme-preview-table-card-panel {
     padding: 16px 24px;
-    background: #FFFFFF;
+    background: #FFF;
     box-shadow: 0 2px 4px 0 #1919290d;
     border-radius: 2px;
 
@@ -100,11 +101,12 @@
 
 }
 
-.bk-pop-confirm-footer {
-  display: none !important;
-}
-.bk-popover.bk-pop-confirm-box {
+.scheme-service-areas-popconfirm {
   padding: 18px 16px !important;
+
+  .bk-pop-confirm-footer {
+    display: none !important;
+  }
 }
 
 .service-areas-table-container {
@@ -132,7 +134,7 @@
       width: 14px;
       min-width: 14px;
       height: 16px;
-      color: #FFFFFF;
+      color: #FFF;
       display: flex;
       align-items: center;
       justify-content: center;

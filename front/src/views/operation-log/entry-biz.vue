@@ -8,7 +8,6 @@ import { transformSimpleCondition, getDateRange } from '@/utils/search';
 import { IAuditItem, useAuditStore } from '@/store/audit';
 import routerAction from '@/router/utils/action';
 import { MENU_BUSINESS_OPERATION_LOG_DETAILS } from '@/constants/menu-symbol';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
 import { OPERATION_LOG_RES_TYPES, OPERATION_LOG_RESOURCE_TYPE, OPERATION_LOG_RESOURCE_TYPE_NAME } from './constants';
 import { type ISearchCondition } from './typings';
 import { SearchConditionFactory } from './children/search/condition-factory';
@@ -38,7 +37,7 @@ const tabActive = computed({
   },
   set(value) {
     router.push({
-      query: { [GLOBAL_BIZS_KEY]: route.query?.[GLOBAL_BIZS_KEY], tab: value === 'all' ? undefined : value },
+      query: { tab: value === 'all' ? undefined : value },
     });
   },
 });
@@ -112,12 +111,12 @@ const handleViewDetails = (row: IAuditItem) => {
     routerAction.redirect(
       {
         name: MENU_BUSINESS_OPERATION_LOG_DETAILS,
+        params: { bizId: bk_biz_id },
         query: {
           record_id: id,
           name: res_name,
           flow: flowId,
           res_id,
-          [GLOBAL_BIZS_KEY]: bk_biz_id,
         },
       },
       {

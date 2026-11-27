@@ -10,7 +10,8 @@ import useFormModel from '@/hooks/useFormModel';
 import { BILL_VENDORS_MAP } from '@/views/bill/account/account-manage/constants';
 import { SITE_TYPE_MAP } from '@/common/constant';
 import { VendorAccountNameMap } from './constants';
-import { useVerify } from '@/hooks';
+import { useAuthStore } from '@/store/auth';
+import { MENU_BILL_ROOT_ACCOUNT } from '@/constants/menu-symbol';
 import { IApplicationDetail } from '../index';
 import BusinessValue from '@/components/display-value/business-value.vue';
 import UserValue from '@/components/display-value/user-value.vue';
@@ -66,8 +67,12 @@ export default defineComponent({
       extension: computedExtension.value, // 不同云厂商的信息
     });
 
-    const { authVerifyData } = useVerify();
-    const hasRootAccountFindPermission = computed(() => authVerifyData.value?.permissionAction?.root_account_find);
+    // 一级账号查看权限由 preload 按一级账号菜单预鉴权（view-auth.ts），这里只读缓存；直接请求列表在无权限时会触发接口无权限弹窗
+    const authStore = useAuthStore();
+    const hasRootAccountFindPermission = computed(
+      () =>
+        authStore.isViewPermissionCached(MENU_BILL_ROOT_ACCOUNT) && authStore.hasViewPermission(MENU_BILL_ROOT_ACCOUNT),
+    );
 
     onMounted(async () => {
       // 有权限才获取列表

@@ -1,84 +1,61 @@
 # 菜单与路由
 
 > status: drafted · kind: module
-> globs: `src/router/**`, `src/constants/menu-symbol.ts`, `src/common/menu-service.ts`, `src/views/home/hooks/to-legacy-menus.ts`
+> globs: `src/router/**`, `src/constants/menu-symbol.ts`, `src/common/menu-service.ts`, `src/components/layout/menu*.vue`, `src/components/layout/header.vue`
 
-一级菜单在 header-config；侧栏按路径段 switch 取数据，资源运营一支已由 menu-service 供数，其余仍靠路由 children + groupTitle 表达分组。
-
-## 当前基线的真实形态（先读这条，别被 rule 误导）
-
-`.cursor/rules/fe-menu-route-architecture.mdc` 与 `fe-deprecated.mdc` 描述的是完整的 `common/menu-service.ts` + `components/layout/menu.vue` 那套「菜单与路由解耦」形态。**那是一次整体重构的产物，未合入本基线**：本分支的 `common/menu-service.ts` 只是先行雏形（只覆盖资源运营），没有 `components/layout/menu.vue`，`views/home/index.tsx` 仍是活的布局入口（`App.vue` 直接 `import Home from '@/views/home'`）。按那两份 rule 的「已废弃」结论跳过 `views/home/index.tsx`，会找不到菜单到底在哪渲染。
+一级菜单与侧栏只在 `common/menu-service.ts` 声明；页面所属一级菜单按 `route.matched[0].name` 判定，顶栏高亮与侧栏都由它决定。
 
 ## 关键文件与职责
 
-- **一级菜单定义** — `src/router/header-config.ts` 的 `headRouteConfig`，`{ id, name, path }` 数组，数组顺序即从左到右的展示顺序；显示走 `t(name)`，点击按 path 跳转。
-- **一级菜单显隐** — 在 `views/home/index.tsx` 的 header 渲染处按 `window.PROJECT_CONFIG` 的 env 开关就地过滤（`ENABLE_CLOUD_SELECTION` 控 `scheme`、`ENABLE_ACCOUNT_BILL` 控 `bill`）。开关只作用于顶栏入口，直接访问对应 URL 时侧栏照常显示。
-- **侧栏数据来源** — `views/home/hooks/useChangeHeaderTab.ts` 按 `route.path` 的第一段做 switch，给 `menus.value` 赋值：
-  - `bill` → `toLegacyMenus(getBillMenus(), billViews)`：菜单来自 `common/menu-service.ts`，路由来自 `views/index.ts` 的 `billViews`，两者各有来源。
-  - `business` → `businessViews`（就是 `router/module/business.ts`）、`resource` → `router/module/resource.ts`、`service` → `service.ts`、`scheme` → `scheme.ts`：直接用路由数组当菜单。
-- **侧栏渲染** — `views/home/index.tsx` 的 `menu` 插槽，遍历 `menus.value` 输出 `Menu.Group` / `Menu.Item`。它只认路由形状的数据。
+- **菜单符号** — `constants/menu-symbol.ts`，全部是 `Symbol('<描述>')`（描述串即一期之前的字符串值，与 PR #1897 一致）。路由 `name`、`meta.activeKey`、`meta.owner`、`menu.relative` 都直接用这些 Symbol。业务侧已全部是 Symbol（回收站 `MENU_BUSINESS_RECYCLEBIN`、申请页 `MENU_BUSINESS_APPLY_{CVM,VPC,DISK,SUBNET,CLB}`、负载均衡 `MENU_BUSINESS_LOAD_BALANCER_{LB,TG}_VIEW`）；未迁移的服务请求、资源选型仍有字符串 name（如 `'scheme-recommendation'`）。
+- **一级菜单与侧栏** — `common/menu-service.ts` 的 `menus: IMenu[]`。顶层每项的 `id` 必须等于 `router/index.ts` 里对应顶层父路由的 `name`；数组顺序即顶栏从左到右的顺序；声明了 `menu` 的一级菜单才显示侧栏。
+  - `getMenus()`：顶栏用，按 `visibility` 过滤（资源选型受 `ENABLE_CLOUD_SELECTION`；资源运营始终显示，`ENABLE_ACCOUNT_BILL` 只控其下「云账单管理」三项）。
+  - `getCurrentTopMenu(route)`：侧栏与顶栏激活用。**一级菜单本身不按 `visibility` 过滤**（开关只管顶栏入口，直接访问地址时侧栏照常），子项照常过滤。
+  - `getMenuRoute(views, id)`：在路由树里递归按 name 找记录，菜单项只按 name 引用路由。
+  - `toMenuKey(id)`：Symbol 取 `description` 作 `bk-menu` 的 key；侧栏 `active-key` 用同一函数处理 `route.meta.activeKey`。
+- **顶层父路由** — `router/index.ts`：每个一级菜单一个带 name、不挂组件、带 `redirect`（入口页）的父路由。状态路由 `404` / `error` 不在任何父路由下，因此不属于任何一级菜单（顶栏无激活、无侧栏）。未知地址（含旧书签 `/403/:id`）兜底进 `404`。各父路由的 `children` 来自 `views/index.ts`，导出时已经 `injectStatusComponents` 注入状态页 named view；新增视图集合也必须经它包一层。全局 `beforeEach`：业务拦截器（可能转址）→ `available` → `meta.auth.view`。
+- **业务地址** — 业务资源根是 `/business/:bizId(\d+)?`，子路由全部相对路径，地址形如 `/business/<业务ID>/host`。`router/business-interceptor.ts` 只作用于业务路由，顺序与 #1897 相同：路径已有业务 ID 时以路径为准；路径没有时才把 `?bizs=` 转成路径参数；仍然没有时依次取 localStorage、第一个有权限业务、第一个业务。业务 ID 定下来后再判状态（见 auth 模块），通过后写 localStorage 与 `accountStore.bizs`。转址由拦截器自己 `next({ replace: true })`，不把缺业务 ID 的中间地址留在历史记录里。
+- **业务内跳转** — 跳业务路由一律显式传 `params: { bizId }`（`route.params.bizId`、负载均衡页注入的 `currentGlobalBusinessId`、或 `getBizsId()`），**不要**再带 `?bizs=`；字符串地址写 `/#/business/${bizId}/…`。vue-router 4.1 按名字解析时只沿用**必填**路径参数，`bizId` 是可选参数，不传就会丢；丢了由拦截器按「localStorage → 第一个有权限业务 → 第一个业务」补上并 `replace`，只作兜底。读当前业务用 `route.params.bizId` 或 `useWhereAmI().getBizsId()`（路由 → `accountStore.bizs` → localStorage，组件外也可用）。`accountStore.bizs` 只是镜像，供取不到路由的旧代码读。
+- **一级视图集合** — `views/index.ts` 导出 `businessViews` / `serviceViews` / `resourceViews` / `schemeViews`，路由注册与菜单服务共用同一份。`businessViews` 由各模块 `views/<模块>/route-config.ts` 拼接（主机、硬盘、镜像、VPC、子网、弹性 IP、网络接口、路由表、安全组、负载均衡、证书、单据、操作记录、任务、云账号管理、回收站），每条记录 `meta.owner = MENU_BUSINESS`。`resourceViews`（资源运营 `/resource` 根）= 资源纳管 + 账号管理 + 回收管理 + 操作记录 + 账单（`/resource/bill/*`）。资源侧各模块的旧地址数组（`*Legacy`）由 `router/index.ts` 在顶层注册；业务侧旧地址（`ip`、`host|drive/recyclebin/:type`）写在各自模块的 `route-config.ts` 里，随 `businessViews` 注册。
 
-## 侧栏渲染规则
+## 侧栏与顶栏渲染
 
-判定只对 `menus.value` 的**顶层元素**生效：`Array.isArray(menuItem.children) && !menuItem.meta?.hasPageRoute` 为真就渲染成 `Menu.Group`（标题取 `meta.groupTitle`，key 取 `path`），否则渲染成单个 `Menu.Item`。分组下的子项无论自己有没有 children，都只渲染成一个菜单项。
+- `components/layout/menu.vue`：分固定区与滚动区。固定区 = 业务选择器（`components/business-selector/global.vue`，仅业务资源；侧栏收起时随侧栏变窄，与 #1897 一致）+「我的收藏」（独立 `bk-menu`，`menu-favorites.vue`）；滚动区 = 常规菜单，按 `group` 聚合（首次出现顺序），分组用可折叠的 `bk-submenu`，图标取组内第一项的 `groupIcon`。图标照设计稿只用在分组标题与不在分组里的独立菜单（`IMenu.icon`），分组内的菜单项不配 `icon`。菜单项权限过滤读 `constants/view-auth.ts` 中 `hideMenu` 项的视图权限缓存（菜单 id = `viewId`，见 auth 模块；**不**照 #1897 按 `hasViewPermission` 过滤全部菜单）；整组为空时分组隐藏。
+  - 收藏 / 折叠：`hooks/use-menu-favorite.ts`、`hooks/use-menu-collapse.ts` 是模块级单例，按「用户名 × 一级菜单 description」存 localStorage。失效收藏按「菜单是否存在」清理，无权限的只是不显示；无收藏时收藏区强制收起且不可展开。从收藏区点击时常规菜单的激活项弱化，反之亦然（`lastClickSource`）。
+  - 切换业务：`router.resolve({ name: meta.menu.relative ?? route.name, params: { bizId } })` 后整页刷新，详情页回到所属列表。选择器的业务收藏（`hooks/use-business-favorite.ts`）只在当前业务有权限时查询，否则收藏接口会触发全局申请弹窗。
+- `components/layout/menu-item.vue`：按 `{ name }` 跳转，业务菜单另带 `params.bizId`（`menu.vue` 经 `provide('isBusinessNav' / 'bizId')` 下发，收藏区同理），悬停显示收藏星标。显示名取 `IMenu.i18n` 原文；需要翻译的项（单据管理、权限策略库）在 menu-service 里已用 `t()` 求值，渲染器不再套 `t()`。
+- `components/layout/header.vue`：遍历 `getMenus()`（再过滤 `router.hasRoute`），`RouterLink` 跳 `{ name: 一级菜单 id }`，由父路由 `redirect` 落到入口页（业务资源由拦截器补业务 ID）。激活态照搬 PR 用 `.router-link-active`：链接指向一级父路由，当前路由 matched 含它即点亮（与 `getCurrentTopMenu` 等价，`query` 不参与）。只做跳转的一级入口（资源接入 `MENU_RESOURCE_ACCESS`）不注册路由，菜单项声明 `route`（目标页面）：`header.vue` 对带 `route` 的一级菜单链到 `route.name`、`hasRoute` 按它过滤，并传空的 `active-class` / `exact-active-class`，否则会和目标所属一级菜单同时点亮。顶栏不再清空资源账号选择：离开资源纳管时由 `resource-entry.vue` 卸载清空。
 
-菜单项读取的 meta：`title` 展示名、`icon` 图标类名、`activeKey` 高亮、`notMenu` 排除出菜单、`checkAuth` 按权限 action 过滤（整组子项都无权限时该分组自动隐藏）。`icon` 与 `notMenu` 全仓唯一消费方就是这里。
+## 面包屑
 
-面包屑不归侧栏管，由 `hooks/use-breadcrumb.ts` 读路由：`meta.layout.breadcrumb.show ?? meta.isShowBreadcrumb` 决定显示，标题取 `meta.title`，返回箭头来自 `meta.menu.relative`（或 `_f` 历史栈）。字段名已对齐整体重构的 `layout.breadcrumb`（单数），新路由用它，不再写已废弃的 `isShowBreadcrumb`；但本分支 `Meta` **默认不显示**，与整体重构默认显示不同，需要面包屑的页面必须显式写 `show: true`。
+`hooks/use-breadcrumb.ts` 读路由 `meta.layout.breadcrumb`：`show !== false` 即显示，`back` 控制返回箭头，标题只取 `menu.i18n`。`router/meta.ts` 的 `Meta` 与 #1897 一致：默认 `layout.breadcrumb = { show: true, back: true }`、`activeKey` / `owner` 默认 `Symbol.for('')`，不再有 `title` 字段（标题一律写 `menu.i18n`）；`isShowBreadcrumb`、`notMenu`、`icon` 也已删除（显示名、图标、是否进菜单归 menu-service）。
 
-`meta.hasPageRoute` 是给顶层元素用的反例标记（「我的 children 是页签子路由，别当分组」），目前全仓已无设置点，只剩判定式。
+**浅合并陷阱**：路由 `meta` 沿 matched 链浅合并，用 `Meta` 构造的子路由一定带 `layout` / `activeKey` / `owner` 默认值，会盖掉父记录上的同名配置。因此有子路由时，每条子路由都要自己写全 `layout`、`activeKey`、`owner`（如负载均衡、账号详情），不要指望从父记录继承；不挂页面的中间层记录（如负载均衡的 `resource`）不写 `meta`。
 
-## 分组的两种写法
+## 返回与历史栈
 
-**写法一：路由包装节点（旧，business / service 等仍在用）**。菜单数组里放一个不可点击的节点：
-
-```ts
-{ path: '/business', children: [ ...真正的菜单路由 ], meta: { groupTitle: '资源' } }
-```
-
-它同时被注册进 vue-router，菜单结构因此混在路由树里，改分组就是改路由树。`router/module/business.ts` 末尾用这个写法排出了「资源 / 其他 / 账号 / 回收站」四个分组。**新代码不要再用。**
-
-**写法二：menu-service（目标形态，资源运营已用）**。菜单在 `common/menu-service.ts` 里声明为 `IMenu`，分组是菜单项上的扁平字段 `group`，菜单只按 name 引用路由：
-
-```ts
-{ id: MENU_BILL_MANAGE, i18n: '云账单管理', icon: 'bkhcm-icon-bill-manage', group: '云账单管理',
-  route: getMenuRoute(billViews, MENU_BILL_MANAGE) }
-```
-
-显示名（`i18n`）、图标、分组、显隐（`visibility`）归菜单；页面标题、权限（`checkAuth`）、高亮（`activeKey`）留在路由上。菜单列哪些项由 menu-service 决定，路由上不再需要 `notMenu` / `icon`。`IMenu`、`getMenuRoute` 与 visibility 过滤和那次未合入的整体重构保持一致，将来可原样并入完整版。
-
-**两种写法之间的桥是 `views/home/hooks/to-legacy-menus.ts`**：把 `IMenu[]` 按 `group` 聚合（顺序按首次出现），转成旧渲染器认得的写法一形状，结果只活在内存里、不注册进路由。转换时按 name 取完整路由记录、复制一份并用菜单的 `i18n` / `icon` 覆盖 `meta.title` / `meta.icon`，同时**去掉 `children`**，保证带页签子路由的菜单项永远不会被误判成分组。侧栏改为直接按 `IMenu` 渲染后删除这个文件。
+`router/utils/history-storage.ts` 把路由 name 写进 sessionStorage：Symbol 序列化为 description，读回时查表还原为 Symbol（`JSON.stringify` 会直接丢掉 Symbol）。`router/hooks/use-back.ts` 在历史记录缺 name 时回退到 `meta.menu.relative`。历史记录存了完整 `params`（含 `bizId`）；回退到 `menu.relative` 时不带 `bizId`，由拦截器按 localStorage 里当前业务补上。面包屑不再补 `?bizs=`。
 
 ## 模块路由迁移配方（去中心化模式）
 
-把一个模块从 `router/module/*.ts` 迁到 `views/<模块>/route-config.ts` 时，以下几步缺一不可。已按此迁完的有：任务管理、操作记录、云账号管理、负载均衡、单据、账单。
+把一个模块从 `router/module/*.ts` 迁到 `views/<模块>/route-config.ts` 时：
 
-1. **模块自己定义路由**：`name` 用 `constants/menu-symbol.ts` 的常量，`path` 用**相对路径**，`meta` 用 `...new Meta({...})` 展开。
-2. **汇入一级视图集合**：在 `views/index.ts` 导出纯路由数组 `xxxViews`，不要在里面放分组包装节点。
-3. **菜单在 menu-service 声明**：按写法二加 `IMenu` 项，`useChangeHeaderTab` 里用 `toLegacyMenus(getXxxMenus(), xxxViews)` 喂给侧栏。
-4. **把新符号加进 `views/home/index.tsx` 的 `getRouteLinkParams` 白名单**。该函数白名单内走 `{ name }` 跳转、其余走 `{ path: config.path }`；**路由改成相对 path 后不进白名单，侧栏 RouterLink 会拿相对路径去跳，直接跳错**。这一步最容易漏。
-5. **一级视图要有承载相对路径的父路由**：`{ name, path: '/xxx', children: xxxViews }`，URL 不变，旧地址继续可用。
-6. **地址变了就补旧地址兼容**，并核对 `header-config.ts` 里的顶栏入口地址是否也是旧地址。固定目标用 `redirect: { name }`（默认保留 query）；目标取决于权限时用 `beforeEnter` 返回 `{ name, query: to.query, replace: true }`，不能用 `redirect` 函数，因为它在全局守卫加载权限之前求值。实例见 `bill` 模块「旧地址兼容」。整体重构分支搬地址时漏了这一步，从那边移植时要补上。
+1. 模块自己定义路由：`name` 用 `menu-symbol.ts` 的 Symbol，`path` 用相对路径，`meta` 用 `...new Meta({...})`。
+2. 在 `views/index.ts` 把路由并入所属一级视图集合（纯路由数组，不放分组包装节点）。
+3. 在 menu-service 对应一级菜单的 `menu` 里加 `IMenu`（`group` 是分组标题）。
+4. 一级视图要有承载相对路径的顶层父路由；地址变了就补旧地址兼容。固定目标用 `redirect: { name }`（默认保留 query）；目标取决于权限时用 `beforeEnter` 返回 `{ name, query: to.query, replace: true }`，不能用 `redirect` 函数，因为它在全局守卫加载权限之前求值。实例见 `bill` 模块「旧地址兼容」。
 
-**`children` 不是禁区**。任务管理、操作记录是平的，因为列表与详情是彼此独立的整页；负载均衡（`entry-biz.vue`）和云账单管理（`bill/index.tsx`）有真实布局层——提供页签栏与 `provide` 上下文、内含 `<RouterView>`——所以保留嵌套。禁止的是**拿 children 当菜单分组**。
+`children` 不是禁区：负载均衡（`entry-biz.vue`）、云账单管理（`bill/index.tsx`）有真实布局层（页签栏、`provide` 上下文、内含 `<RouterView>`），保留嵌套。禁止的是**拿 children 当菜单分组**。
 
 ## 变体差异
 
-菜单项集合随构建变体不同。**判断「有没有某个菜单」一律以当前分支实际注册的数据为准**：上游需求文档里提到、而本分支没有注册的菜单项，不代表需求写错，也不要照文字凭空新增；反之本分支有而文档没提的，也不要顺手删。核对时要连 header 的 env 开关一起看，否则会把「开关关掉」误判成「没有这个菜单」。
+菜单项集合随构建变体不同。**判断「有没有某个菜单」一律以当前分支实际注册的数据为准**：上游需求文档提到、而本分支没有注册的菜单项，不代表需求写错，也不要照文字凭空新增；反之本分支有而文档没提的，也不要顺手删。核对时要连 menu-service 的 `visibility` 开关一起看。
 
-## 架构演进：menu-service 化
+## 旧地址兼容（菜单整合二期）
 
-目标形态是菜单与路由彻底解耦：所有一级视图的菜单（含一级菜单本身）都在 menu-service 声明，侧栏与顶栏直接按 `IMenu` 渲染，`visibility` 是一等字段，菜单搬家不动路由。
+二期首批每单上线即用新地址，资源运营各模块在自己的 `route-config.ts` 导出旧地址数组，由 `router/index.ts` 在 catch-all 之前注册：`resourceManageLegacy`（`/resource/resource?type=` 与旧新建页）、`resourceDetailLegacy`、`recyclebinRscLegacy`、`operationLogRscLegacy`、`accountManageLegacy`、`billLegacy`。原资源接入的路由文件 `router/module/resource.ts` / `resource-inside.ts` / `service-inside.ts` 与业务路由 `router/module/business.ts`、旧 403 路由 `router/module/common.ts` 已删除；侧栏按最终菜单树结构，除资源纳管外都是无云账号树的独立页面。目标形态（菜单与路由解耦、侧栏与顶栏按 `IMenu` 渲染、`visibility` 一等字段）已由上文的 menu-service 落地；`header-config.ts`、`to-legacy-menus.ts`、`useChangeHeaderTab` 与路由上的 `groupTitle` 包装节点已删除，不再按「剩余工作」继续叠浅层改动。首批删除 / 迁移的文件与合入 v1.9.x 时的冲突处置见 `../menu-phase2-merge-v1.9.x.md`。
 
-**已完成的先行部分**：资源运营一支的侧栏已由 menu-service 供数（写法二 + 适配桥）。**剩余工作**：其余一级视图的菜单迁入 menu-service；一级菜单名从 `header-config.ts` 迁入；侧栏 / 顶栏改为按 `IMenu` 渲染；删除 `to-legacy-menus.ts` 与路由上的 `groupTitle` 包装节点、`hasPageRoute` 判定。
-
-当前采用分期浅层改动，**命中下面任一条信号就该在那一期做剩余重构，而不是继续叠浅层改动**：
-
-1. 同一轮改动需要在 ≥3 处各写一份菜单事实（`header-config.ts`、`useChangeHeaderTab` 的 switch、路由上的 `groupTitle` / `children`、menu-service）。
-2. 需要让「菜单显隐」在顶栏与侧栏间联动（按权限、变体或灰度控制某一项），而顶栏现状只能在 JSX 里加 env 判断。
-3. 需要把已有菜单项从一个一级视图搬到另一个。即便该项已由 menu-service 供数，`useChangeHeaderTab` 仍按 URL 第一段决定侧栏归属与顶栏高亮，搬家就等于改 URL，与「旧地址必须继续可用」冲突。
-
-真要做时，把那次未合入的整体重构当**供体**按期裁剪搬运（它已有完整 menu-service、一级视图集合、新侧栏），不要重写；也不要再一次性全量合入——上次就是因为改动过大没能合进来。## 明细目录
+## 明细目录
 
 <!-- bkdevbuddy:toc:start -->
 <!-- bkdevbuddy:toc:end -->

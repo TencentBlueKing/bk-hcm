@@ -4,11 +4,12 @@ import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import routerAction from '@/router/utils/action';
 import { ActiveQueryKey, ClbDetailsTabKey } from '../constants';
-import { GLOBAL_BIZS_KEY } from '@/common/constant';
+import { pickClbDetailsBaseQuery, resolveClbDetailsTab } from '../utils';
+
 import { type ILoadBalancerDetails, useLoadBalancerClbStore } from '@/store/load-balancer/clb';
 import { getInstVip } from '@/utils';
 import { useBack } from '@/router/hooks/use-back';
-import { MENU_BUSINESS_LOAD_BALANCER_OVERVIEW } from '@/constants/menu-symbol';
+import { MENU_BUSINESS_LOAD_BALANCER_LB_VIEW } from '@/constants/menu-symbol';
 import { ModelPropertyDisplay } from '@/model/typings';
 import { DisplayFieldFactory, DisplayFieldType } from '../children/display/field-factory';
 
@@ -24,8 +25,8 @@ const { t } = useI18n();
 const loadBalancerClbStore = useLoadBalancerClbStore();
 
 const currentGlobalBusinessId = inject<ComputedRef<number>>('currentGlobalBusinessId');
-watch(currentGlobalBusinessId, (val) => {
-  routerAction.redirect({ name: MENU_BUSINESS_LOAD_BALANCER_OVERVIEW, query: { [GLOBAL_BIZS_KEY]: val } });
+watch(currentGlobalBusinessId, (bizId) => {
+  routerAction.redirect({ name: MENU_BUSINESS_LOAD_BALANCER_LB_VIEW, params: { bizId } });
 });
 
 const { handleBack } = useBack();
@@ -45,8 +46,14 @@ const fields = fieldIds.map((id) => {
   return { ...property, ...fieldConfig[id] };
 });
 
+let detailsRequestSeq = 0;
 const getDetails = async (id: string) => {
-  details.value = await loadBalancerClbStore.getLoadBalancerDetails(id, currentGlobalBusinessId.value);
+  if (!id) return;
+  detailsRequestSeq += 1;
+  const seq = detailsRequestSeq;
+  const res = await loadBalancerClbStore.getLoadBalancerDetails(id, currentGlobalBusinessId.value);
+  if (seq !== detailsRequestSeq) return;
+  details.value = res;
 };
 watch(
   () => route.params.id,
@@ -63,10 +70,20 @@ const tabs = computed(() => {
     { label: t('安全组'), name: ClbDetailsTabKey.SECURITY, component: SecurityGroup },
   ];
 });
-const active = ref((route.query?.[ActiveQueryKey.DETAILS] as ClbDetailsTabKey) || tabs.value[0].name);
+const active = ref<ClbDetailsTabKey>(resolveClbDetailsTab(route.query?.[ActiveQueryKey.DETAILS]));
+
+watch(
+  () => route.query?.[ActiveQueryKey.DETAILS],
+  (tab) => {
+    active.value = resolveClbDetailsTab(tab);
+  },
+);
 
 const handleTabChange = (tabName: ClbDetailsTabKey) => {
-  routerAction.redirect({ query: { ...route.query, [ActiveQueryKey.DETAILS]: tabName } });
+  if (tabName === resolveClbDetailsTab(route.query?.[ActiveQueryKey.DETAILS])) return;
+  routerAction.redirect({
+    query: pickClbDetailsBaseQuery(route.query, { tab: tabName }),
+  });
 };
 
 onMounted(() => {
@@ -76,11 +93,7 @@ onMounted(() => {
 
 <template>
   <div class="details-container">
-    <section
-      v-if="hasBackAll"
-      class="back"
-      @click="handleBack({ query: { [GLOBAL_BIZS_KEY]: currentGlobalBusinessId } })"
-    >
+    <section v-if="hasBackAll" class="back" @click="handleBack()">
       <i class="hcm-icon bkhcm-icon-arrows--left-line"></i>
       <span>{{ t('返回全部') }}</span>
     </section>

@@ -12,6 +12,7 @@ export const AUTH_DELETE_CLOUD_SELECTION_SCHEME = Symbol.for('auth_delete_cloud_
 export const AUTH_FIND_ACCOUNT = Symbol.for('auth_find_account');
 export const AUTH_IMPORT_ACCOUNT = Symbol.for('auth_import_account');
 export const AUTH_UPDATE_ACCOUNT = Symbol.for('auth_update_account');
+export const AUTH_DELETE_ACCOUNT = Symbol.for('auth_delete_account');
 
 /**
  * 业务访问

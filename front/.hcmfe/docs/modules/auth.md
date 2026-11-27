@@ -1,13 +1,31 @@
 # 权限控制
 
 > status: stub · kind: module
-> globs: `src/common/auth-service.ts`, `src/constants/auth-symbols.ts`, `src/components/auth/**`, `src/components/permission/**`, `src/hooks/useVerify.ts`, `src/store/common.ts`, `src/views/error-pages/403.tsx`
+> globs: `src/common/auth-service.ts`, `src/constants/auth-symbols.ts`, `src/components/auth/**`, `src/components/permission/**`, `src/store/auth.ts`, `src/router/business-interceptor.ts`
 
-视图级权限与操作级权限。旧 useVerify/PermissionDialog 已废弃。
+视图级权限与操作级权限。旧 useVerify / PermissionDialog / pageAuthData 已删除。
 
 ## 职责
 
-两层权限：视图级（能否进入页面，路由 `meta.auth.view` + 路由守卫 + `views/status/permission.vue`）与操作级（能否执行某个操作，按钮禁用 + 权限申请弹窗）。操作级的关键文件：
+两层权限：视图级（能否进入页面，路由 `meta.auth.view` + 路由守卫 + `views/status/permission.vue`）与操作级（能否执行某个操作，按钮禁用 + 权限申请弹窗）。
+
+### 视图级
+
+页面查看权限 = 路由声明 + 启动预鉴权 + 守卫判定 + 框架内无权限页（named view），对齐 PR #1897，按现网拦截范围裁剪。
+
+- **路由拦截** — 路由 `meta.auth.view`（`IAuthSign`，只用静态 sign），由 `router/index.ts` 的 `beforeEach` 调 `authStore.checkViewPermission(to.name, sign)` 判定；无权限把 `to.meta.view` 置为 `permission` 并挂 `permissionData`，地址不变。`views/index.ts` 的 `injectStatusComponents` 给各视图集合的带组件记录注入 `permission` / `error` / `notFound` 组件，`main-content.vue` 的出口 `RouterView :name="view"` 渲染对应页面。路由数组必须经它汇入，否则无权限时白屏。
+- **业务资源** — 不按路由声明，由 `router/business-interceptor.ts` 在业务 ID 确定之后统一判（取值顺序见 menu-route）：解析不出任何业务 `noBiz`、业务 ID 不在全量列表 `bizNotFound`、不在授权列表 `bizUnauthed`。不在定业务 ID 之前用「没有任何业务权限」拦下带具体业务的地址。渲染 `views/status/business.vue`（`noBiz` / `bizUnauthed` 可申请，不弹全局申请弹窗）。
+- **预鉴权与缓存** — `constants/view-auth.ts` 的 `viewAuthConfig` 在 `store/index.ts` 的 `preload` 中合成一次 `/auth/verify`，结果按 `viewId`（= 路由 name，Symbol 或字符串原样作键）缓存在 `store/auth.ts` 的 `viewPermissions`。未预鉴权的声明在首次访问时动态查一次后缓存。接口失败**不写缓存**：守卫再请求一次，仍失败进 error 页。
+- **侧栏显隐** — `viewAuthConfig` 中 `hideMenu: true` 的项，`components/layout/menu.vue` 只在「已缓存且有权限」时显示同 id 菜单（接口失败也不显示）。菜单显隐与页面拦截解耦：云账单管理是「菜单按权限隐藏、直接访问可打开」（预鉴权 + `hideMenu`，路由不声明）；二级账号是「菜单常显、点进去拦截」（路由声明，不配 `hideMenu`）；一级账号、权限策略库、账号管理（`AUTH_FIND_ACCOUNT`）、资源侧回收管理（`AUTH_FIND_RECYCLE_BIN`）与操作记录（`AUTH_BIZ_FIND_AUDIT`，不传业务即资源审计）两处都配。
+- **无权限页** — `views/status/permission.vue` 按 sign 取 `descriptions` 文案；先「去申请」，点过后换「已申请，刷新页面」。需由管理员主动授权的权限加进 `NO_SELF_APPLY_SIGNS`（当前为一级账号）：只提示联系管理员、不显示申请按钮。后端未返回 `permissionData` 时也不显示按钮。
+- **旧链路已退场** — 旧 `/403/:id` 页已删除，旧书签落 404。启动阶段只有 `preload` 里视图权限那一次 `/auth/verify`，不再预取旧按钮权限（`store/common.ts` 只剩跑马灯状态）。
+- **只读「是否有权限」、不渲染按钮** — 有对应视图预鉴权的，读缓存：`authStore.isViewPermissionCached(viewId) && authStore.hasViewPermission(viewId)`（例：账号申请单据详情按 `MENU_BILL_ROOT_ACCOUNT` 决定是否拉一级账号列表）。不要直接请求受保护接口再吞掉失败：`http/index.ts` 遇接口无权限会自动弹申请弹窗。
+
+新增页面声明查看权限：路由 name 用 `menu-symbol.ts` 常量 → `meta.auth.view` → 有菜单且需按权限隐藏时在 `viewAuthConfig` 加 `{ viewId: 路由 name, authSign, hideMenu: true }` → 需要说明文案的在 `permission.vue` 的 `descriptions` 加一项。
+
+### 操作级
+
+关键文件：
 
 | 文件 | 职责 |
 | --- | --- |
@@ -18,7 +36,7 @@
 | `components/permission/apply-dialog.vue` | 无权限弹窗：权限清单表格 + 去申请 |
 | `store/auth.ts` | `verify` 鉴权、`getApplyPermUrl` 取 IAM 申请链接 |
 
-旧链路（`hooks/useVerify.ts`、`components/permission-dialog/`、`store/useGlobalPermissionDialog.ts`）已废弃，新代码禁止使用，迁移口径见 rule `fe-auth-migration`。
+旧链路（`hooks/useVerify.ts`、`components/permission-dialog/`、`provide('authAction')`、`store/useGlobalPermissionDialog.ts`）已删除（菜单整合二期收尾单），站内操作级权限只剩 `hcm-auth` 一套。详情字段级编辑鉴权用 `info-list` 的 `getAuthSign`。迁移口径见 rule `fe-auth-migration`。
 
 ## 关键流程 / 注意事项
 
@@ -43,9 +61,11 @@
 - 多个资源鉴同一权限时后端会返回重复实例，按 `type + id` 去重。
 - 「去申请」提交的是未裁剪的整个 `permission` payload，展示层的裁剪不影响申请链接的内容。
 
-### 现存缺口
+### 接口无权限兜底
 
-`app.vue` 把弹窗实例挂到 `window.hcmPermissionDialog`、`http/index.ts` 在 403 时 `bus.$emit('show-forbidden')`，但两者都没有消费方——接口返回无权限时并没有全局兜底弹窗，只会落到各自的错误提示。因此新增操作必须自己做预鉴权，不能指望兜底。
+`http/index.ts` 在 HTTP 403 或业务码 `2030403`（后端 `PermissionDenied`，响应体 `permission` 带缺失权限）时调 `window.hcmPermissionDialog.show(permission)` 弹统一申请弹窗；无 `permission` 或弹窗尚未挂载（`preload` 阶段）时退回错误提示。弹窗单实例，后到的覆盖先到的。兜底只解决「漏了预鉴权」时的提示，按钮置灰仍要靠 `hcm-auth` 预鉴权。
+
+旧全局弹窗（`components/global-permission-dialog`、`store/useGlobalPermissionDialog.ts`）与整页无权限（`views/resource/NoPermission.tsx`、`store/usePagePermissionStore.ts`）已删除。
 
 ## 明细目录
 

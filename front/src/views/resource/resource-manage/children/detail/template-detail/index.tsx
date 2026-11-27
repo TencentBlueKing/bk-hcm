@@ -1,19 +1,24 @@
-import { computed, defineComponent, onMounted, ref, watch } from 'vue';
-import DetailHeader from '../../../common/header/detail-header';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
-import { useRoute } from 'vue-router';
+import { computed, defineComponent, onMounted, ref, watch, watchEffect } from 'vue';
+import useBreadcrumb from '@/hooks/use-breadcrumb';
 import useQueryListCommon from '../../../hooks/use-query-list-common';
 import { QueryRuleOPEnum } from '@/typings';
 import './index.scss';
 import DetailInfo from '../../../common/info/detail-info';
 import { TemplateType, TemplateTypeMap } from '../../dialog/template-dialog';
 import { Table } from 'bkui-vue';
+import { useResourceDetailRoute } from '../../../hooks/use-resource-detail-route';
 
 export default defineComponent({
   setup() {
-    const { whereAmI } = useWhereAmI();
-    const route = useRoute();
-    const templateId = ref(route.query?.id);
+    const { setTitle } = useBreadcrumb();
+    const { detailId } = useResourceDetailRoute();
+    const templateId = ref(detailId.value);
+
+    watchEffect(() => {
+      if (templateId.value) {
+        setTitle(`参数模板: ID ${templateId.value}`);
+      }
+    });
     const singleTableData = ref([]);
     const fetchUrl = ref('argument_templates/list');
     const multipleFilter = ref({
@@ -46,7 +51,7 @@ export default defineComponent({
             {
               field: 'cloud_id',
               op: QueryRuleOPEnum.CS,
-              value: route.query?.id,
+              value: detailId.value,
             },
           ],
         },
@@ -88,10 +93,8 @@ export default defineComponent({
     );
 
     return () => (
-      <div class={'template-detail-container'}>
-        <DetailHeader>参数模板: ID {templateId.value}</DetailHeader>
-
-        <div class={`detial-wrap ${whereAmI.value === Senarios.business ? 'm24' : ''}`}>
+      <div class={'template-detail-container detail-content-wrap'}>
+        <div class={'detial-wrap'}>
           <p class={'title'}>基本信息</p>
           <DetailInfo
             class={'mb16'}

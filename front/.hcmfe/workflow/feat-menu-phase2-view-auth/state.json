@@ -1,0 +1,155 @@
+{
+  "id": "feat-menu-phase2-view-auth",
+  "title": "菜单整合二期：视图权限体系",
+  "currentStage": "test",
+  "createdAt": "2026-10-08T11:31:10.337Z",
+  "updatedAt": "2026-10-09T11:25:01.034Z",
+  "artifacts": {
+    "coding": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase2-view-auth/coding.md",
+        "kind": "file",
+        "addedAt": "2026-10-08T11:51:41.753Z"
+      }
+    ],
+    "test": [
+      {
+        "ref": ".hcmfe/workflow/feat-menu-phase2-view-auth/test.md",
+        "kind": "file",
+        "addedAt": "2026-10-09T09:33:50.702Z"
+      }
+    ]
+  },
+  "approvals": {
+    "coding": {
+      "stage": "coding",
+      "approvedAt": "2026-10-09T09:32:50.641Z",
+      "note": "用户评审 ② 代码后确认：已看完，可以继续"
+    }
+  },
+  "history": [
+    {
+      "from": "init",
+      "to": "coding",
+      "at": "2026-10-08T11:31:10.337Z",
+      "gitHead": "01bca385c35bdf44835e44c2350208395df99d98"
+    },
+    {
+      "from": "coding",
+      "to": "test",
+      "at": "2026-10-09T09:32:50.641Z",
+      "note": "用户评审 ② 代码后确认：已看完，可以继续"
+    }
+  ],
+  "requirementId": "req-menu-phase2",
+  "branch": "feat-menu-phase2-cloud-resource",
+  "mode": "lite",
+  "stages": [
+    "coding",
+    "test",
+    "done"
+  ],
+  "tapd": {
+    "workspaceId": "69995598",
+    "objectType": "story",
+    "itemId": "1069995598138702302",
+    "parentId": "1069995598138393455"
+  },
+  "nodeRuns": {
+    "tapd-story-clarification-and-evaluation-lite": {
+      "status": "skipped",
+      "at": "2026-10-08T11:32:18.453Z",
+      "note": "用户选择跳过：本单 2026-09-29 已完成澄清并回写规范文档，2026-10-08 按第 6 轮结论修订并回写；本地文档 docs/reqs/二期视图权限体系.md"
+    }
+  },
+  "artifactFreshness": {
+    "coding": {
+      "boundFiles": [
+        "store/common.ts",
+        "src/constants/menu-symbol.ts",
+        "constants/auth-symbols.ts",
+        "menu.vue",
+        "router/module/scheme.ts",
+        "resource.ts",
+        "router/index.ts",
+        "views/status/404.vue",
+        "error.vue",
+        "views/index.ts",
+        "main-content.vue",
+        "app.vue",
+        "views/home/index.tsx",
+        "auth-service.ts",
+        "store/auth.ts",
+        "constants/view-auth.ts",
+        "store/index.ts",
+        "router/meta.ts",
+        "views/status/permission.vue",
+        "business.vue",
+        "router/business-interceptor.ts",
+        "src/common/auth-service.ts",
+        "src/store/auth.ts",
+        "hooks/use-permission-dialog.ts",
+        "components/permission/apply-dialog.vue",
+        "src/constants/view-auth.ts",
+        "src/store/index.ts",
+        "main.ts",
+        "src/router/meta.ts",
+        "src/views/task/route-config.ts",
+        "views/task/route-config.ts",
+        "src/views/status/permission.vue",
+        "src/views/status/business.vue",
+        "src/views/index.ts",
+        "src/router/index.ts",
+        "src/components/layout/main-content.vue",
+        "permission.vue",
+        "views/error-pages/403.tsx",
+        "resource-entry.vue",
+        "src/router/business-interceptor.ts",
+        "src/store/common.ts",
+        "hooks/useVerify.ts",
+        "business-interceptor.ts",
+        "403.tsx",
+        "views/scheme/scheme-recommendation/index.tsx",
+        "scheme-list/index.tsx",
+        "views/bill/route-config.ts",
+        "views/ticket/.../account-apply-detail/index.tsx",
+        "src/router/module/scheme.ts",
+        "src/router/module/resource.ts",
+        "src/views/bill/route-config.ts",
+        "src/views/cloud-account-manage/permission-policy/route-config.ts",
+        "router/module/*.ts",
+        "bill/route-config.ts",
+        "permission-policy/route-config.ts",
+        "src/components/layout/menu.vue",
+        "menu-symbol.ts",
+        "src/http/index.ts",
+        "src/components/layout/business-selector.tsx",
+        "components/business-selector/global.vue",
+        "src/app.vue",
+        "src/views/business/host/children/host-operations/use-single-operation.tsx",
+        "src/plugin-handler/business-host-manage.tsx",
+        "src/language/lang.ts",
+        "src/views/resource/NoPermission.tsx",
+        "src/store/usePagePermissionStore.ts",
+        "src/components/global-permission-dialog/index.tsx",
+        "src/store/useGlobalPermissionDialog.ts",
+        "use-single-operation.tsx",
+        "plugin-handler/business-host-manage.tsx",
+        "components/auth/auth.vue",
+        "views/resource/NoPermission.tsx",
+        "store/usePagePermissionStore.ts",
+        "header.vue",
+        "components/global-permission-dialog/index.tsx",
+        "store/useGlobalPermissionDialog.ts",
+        "lang.ts",
+        ".vue",
+        "common/auth-service.ts"
+      ],
+      "contentFingerprint": "f7fc1039a9b877c49269c361f3362f09e572aa4f",
+      "codeBaseline": "4e5019d511a64f8b9eaabcbaa74ea7e667f3df6e",
+      "seatedAt": "2026-10-09T11:25:01.034Z",
+      "waived": true,
+      "waiveNote": "① 修订（页面标题栏改全局面包屑）改动了与 ② 共用的 main-content.vue、router/module/resource.ts，② 的视图权限部分未变，② coding.md 无需更新"
+    }
+  }
+}

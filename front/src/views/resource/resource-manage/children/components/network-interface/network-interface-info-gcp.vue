@@ -1,7 +1,15 @@
 <script lang="ts" setup>
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import { h, ref, watchEffect } from 'vue';
+import { useRoute } from 'vue-router';
 import { CloudType, ConstantMapRecord } from '@/typings';
+import routerAction from '@/router/utils/action';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
+import {
+  MENU_BUSINESS_HOST_DETAILS,
+  MENU_RESOURCE_ACCOUNT_DETAIL,
+  MENU_RESOURCE_DETAIL,
+} from '@/constants/menu-symbol';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { FieldList } from '../../../common/info-list/types';
@@ -15,6 +23,8 @@ const props = defineProps({
   },
 });
 
+const route = useRoute();
+const { getBizsId } = useWhereAmI();
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
 
@@ -41,8 +51,8 @@ const fields = ref<FieldList>([
   {
     name: '账号',
     prop: 'account_id',
-    link(val: string) {
-      return `/#/resource/account/detail/?accountId=${val}&id=${val}`;
+    txtBtn(accountId: string) {
+      routerAction.redirect({ name: MENU_RESOURCE_ACCOUNT_DETAIL, params: { accountId } }, { history: true });
     },
   },
   {
@@ -116,11 +126,19 @@ const fields = ref<FieldList>([
   {
     name: '已关联到',
     prop: 'cvm_id',
-    link(val: string) {
-      if (props.isResourcePage) {
-        return val ? `/#/resource/detail/host?id=${val}&type=gcp` : '--';
-      }
-      return val ? `/#/business/host/detail?id=${val}&type=gcp&bizs=${props.detail.bk_biz_id}` : '--';
+    txtBtn(id: string) {
+      const routeInfo = props.isResourcePage
+        ? {
+            name: MENU_RESOURCE_DETAIL,
+            params: { resourceType: 'host', id },
+            query: { accountId: route.query.accountId, vendor: props.detail.vendor },
+          }
+        : {
+            name: MENU_BUSINESS_HOST_DETAILS,
+            params: { bizId: getBizsId(), id },
+            query: { vendor: props.detail.vendor },
+          };
+      routerAction.redirect(routeInfo, { history: true });
     },
   },
   {

@@ -1,0 +1,16 @@
+.navigation-container {
+  width: 100%;
+  padding: 0 !important;
+  overflow: hidden !important;
+
+  // 当内部有高zindex元素时不遮挡侧边导航
+  z-index: 1;
+
+  .container-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+}

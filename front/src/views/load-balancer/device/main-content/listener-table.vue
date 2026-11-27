@@ -87,6 +87,24 @@ const selections = computed(() => {
   });
   return values;
 });
+const listenerCopyItems = computed(() => [
+  {
+    text: t('监听器端口'),
+    content: selections.value.map((item) => item.port).join('\n'),
+  },
+  {
+    text: t('监听器协议'),
+    content: selections.value.map((item) => item.protocol).join('\n'),
+  },
+  {
+    text: t('负载均衡VIP'),
+    content: selections.value.map((item) => item.lb_vip).join('\n'),
+  },
+  {
+    text: t('负载均衡ID'),
+    content: selections.value.map((item) => item.lb_cloud_id).join('\n'),
+  },
+]);
 const currentGlobalBusinessId = inject<ComputedRef<number>>('currentGlobalBusinessId');
 const clbOperationAuthSign = inject<ComputedRef<IAuthSign | IAuthSign[]>>('clbOperationAuthSign');
 
@@ -110,7 +128,11 @@ const actionConfig: Record<ListenerDeviceType, ActionItemType> = {
   [ListenerDeviceType.COPY]: {
     label: t('复制'),
     value: ListenerDeviceType.COPY,
-    render: () => h(BatchCopy, { selections: moreData.value ? [] : selections.value }),
+    render: () =>
+      h(BatchCopy, {
+        items: listenerCopyItems.value,
+        disabled: moreData.value || selections.value.length === 0,
+      }),
   },
 };
 const listenerActionList = computed<ActionItemType[]>(() => {
@@ -207,8 +229,11 @@ const handleSingleDelete = (row: any) => {
     if (res.data?.task_management_id) {
       routerAction.open({
         name: MENU_BUSINESS_TASK_MANAGEMENT_DETAILS,
-        query: { bizs: currentGlobalBusinessId.value },
-        params: { resourceType: ResourceTypeEnum.CLB, id: res.data.task_management_id },
+        params: {
+          bizId: currentGlobalBusinessId.value,
+          resourceType: ResourceTypeEnum.CLB,
+          id: res.data.task_management_id,
+        },
       });
     } else {
       Message({ theme: 'success', message: t('删除成功') });
@@ -422,10 +447,11 @@ const initAllCheckStatus = () => {
               theme="primary"
               text
               :disabled="noPerm || row.non_zero_weight_count !== 0"
-              v-bk-tooltips="{
-                content: t('监听器RS的权重不为0，不可删除'),
-                disabled: row.non_zero_weight_count === 0,
-              }"
+              v-bk-tooltips="
+                noPerm
+                  ? { disabled: true }
+                  : { content: t('监听器RS的权重不为0，不可删除'), disabled: row.non_zero_weight_count === 0 }
+              "
               @click="handleSingleDelete(row)"
             >
               {{ t('删除') }}
@@ -511,10 +537,13 @@ const initAllCheckStatus = () => {
   :deep(.t-table) {
     height: calc(100% - 80px);
 
+    // stylelint-disable-next-line selector-class-pattern
     .t-table__content {
       height: 100%;
       overflow-y: auto;
     }
+
+    // stylelint-disable-next-line selector-class-pattern
     .t-table__pagination {
       padding: 0;
     }

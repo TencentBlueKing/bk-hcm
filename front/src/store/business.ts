@@ -1,10 +1,8 @@
 import http from '@/http';
 import { defineStore } from 'pinia';
-
-import { useAccountStore } from '@/store';
-import { getQueryStringParams, localStorageActions } from '@/common/util';
 import { AsyncTaskDetailResp, ClbQuotasResp, LbPriceInquiryResp } from '@/typings';
-import { GLOBAL_BIZS_KEY, VendorEnum } from '@/common/constant';
+import { VendorEnum } from '@/common/constant';
+import { useWhereAmI } from '@/hooks/useWhereAmI';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
 
@@ -15,21 +13,11 @@ export interface ICloneSecurityParams {
   bak_manager: string;
   target_region: string;
 }
-// 获取
-const getBusinessApiPath = () => {
-  const store = useAccountStore();
-  if (location.href.includes('business')) {
-    return `bizs/${
-      store.bizs || getQueryStringParams(GLOBAL_BIZS_KEY) || localStorageActions.get(GLOBAL_BIZS_KEY, (value) => value)
-    }/`;
-  }
-  return '';
-};
 
-export const useBusinessStore = defineStore({
-  id: 'businessStore',
-  state: () => ({}),
-  actions: {
+export const useBusinessStore = defineStore('business', () => {
+  const { getBusinessApiPath } = useWhereAmI();
+
+  return {
     /**
      * @description: 获取资源列表 - 业务下
      * @param {any} data
@@ -381,7 +369,7 @@ export const useBusinessStore = defineStore({
         un_health_num: number; // 不健康阈值
         check_port: number; // 自定义探测相关参数。健康检查端口，默认为后端服务的端口
         check_type: 'TCP' | 'HTTP' | 'HTTPS' | 'GRPC' | 'PING' | 'CUSTOM'; // 健康检查使用的协议
-        http_code: string; // http状态码，用于健康检查
+        http_code?: number; // http状态码，用于健康检查（位掩码 1~31）
         http_version: string; // HTTP版本
         http_check_path?: string; // 健康检查路径（仅适用于HTTP/HTTPS转发规则、TCP监听器的HTTP健康检查方式）
         http_check_domain?: string; // 健康检查域名
@@ -559,5 +547,5 @@ export const useBusinessStore = defineStore({
     cvmOperate(type: string, data: { ids: string[] }) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}cvms/batch/${type}`, data);
     },
-  },
+  };
 });

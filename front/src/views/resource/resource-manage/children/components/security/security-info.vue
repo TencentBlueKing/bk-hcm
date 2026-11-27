@@ -2,7 +2,7 @@
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import { useResourceStore } from '@/store';
 import { useI18n } from 'vue-i18n';
-import { inject, PropType, h, withDirectives, reactive, computed, ComputedRef } from 'vue';
+import { inject, PropType, h, withDirectives, reactive, computed, ComputedRef, resolveComponent } from 'vue';
 import { bkTooltips, Message, Tag, Button } from 'bkui-vue';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -14,8 +14,7 @@ import UserValue from '@/components/display-value/user-value.vue';
 import UpdateMgmtTypeDialog from '../../dialog/security-group/update-mgmt-type.vue';
 import UpdateMgmtAttrSingleDialog from '../../dialog/security-group/update-mgmt-attr-single.vue';
 import { SecurityGroupMgmtAttrSingleType } from '@/store/security-group';
-import { useVerify } from '@/hooks/useVerify';
-import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
+import { useResourceDetailAuth } from '@/views/resource/resource-manage/hooks/use-resource-detail-route';
 import UsageBizValue from '@/views/resource/resource-manage/children/components/security/usage-biz-value.vue';
 import { VendorEnum } from '@/common/constant';
 import { IOverflowTooltipOption } from 'bkui-vue/lib/table/props';
@@ -48,13 +47,22 @@ const operateTooltipsOption = inject<ComputedRef<IOverflowTooltipOption>>('opera
 const resourceStore = useResourceStore();
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
-const { whereAmI } = useWhereAmI();
 
-const { handleAuth, authVerifyData } = useVerify();
+const { authPending, updateSign } = useResourceDetailAuth(computed(() => props.detail?.account_id));
+const HcmAuthComp = resolveComponent('hcm-auth');
 
-const authAction = computed(() =>
-  whereAmI.value === Senarios.business ? 'biz_iaas_resource_operate' : 'iaas_resource_operate',
-);
+const renderEditIcon = (field: SecurityGroupMgmtAttrSingleType) =>
+  h(
+    HcmAuthComp,
+    { sign: updateSign.value, ignore: authPending.value, tag: 'span' },
+    {
+      default: () =>
+        h('i', {
+          class: 'icon hcm-icon bkhcm-icon-bianji edit-icon',
+          onclick: () => handleUpdateMgmtAttrSingle(field),
+        }),
+    },
+  );
 
 const mgmtAttrFields: FieldList = [
   {
@@ -90,11 +98,7 @@ const mgmtAttrFields: FieldList = [
       const editEnabled = bk_biz_id === -1 && mgmt_type === SecurityGroupManageType.BIZ;
       return h('div', [
         val === -1 ? '--' : h(BusinessValue, { value: val }),
-        editEnabled &&
-          h('i', {
-            class: 'icon hcm-icon bkhcm-icon-bianji edit-icon',
-            onclick: () => handleUpdateMgmtAttrSingle('mgmt_biz_id'),
-          }),
+        editEnabled && renderEditIcon('mgmt_biz_id'),
       ]);
     },
     copy: false,
@@ -124,11 +128,7 @@ const mgmtAttrFields: FieldList = [
       const unassigned = bk_biz_id === -1;
       return h('div', { style: { display: 'flex', alignItems: 'center', width: '100%' } }, [
         h(UsageBizValue, { value: val, style: { width: 'calc(100% - 24px)', flex: 0, whiteSpace: 'nowrap' } }),
-        unassigned &&
-          h('i', {
-            class: 'icon hcm-icon bkhcm-icon-bianji edit-icon',
-            onclick: () => handleUpdateMgmtAttrSingle('usage_biz_ids'),
-          }),
+        unassigned && renderEditIcon('usage_biz_ids'),
       ]);
     },
     copy: false,
@@ -140,14 +140,7 @@ const mgmtAttrFields: FieldList = [
     render: (val: string) => {
       const { bk_biz_id } = props.detail;
       const unassigned = bk_biz_id === -1;
-      return h('div', [
-        h(UserValue, { value: val }),
-        unassigned &&
-          h('i', {
-            class: 'icon hcm-icon bkhcm-icon-bianji edit-icon',
-            onclick: () => handleUpdateMgmtAttrSingle('manager'),
-          }),
-      ]);
+      return h('div', [h(UserValue, { value: val }), unassigned && renderEditIcon('manager')]);
     },
     copy: true,
     copyContent: (val: string) => val,
@@ -158,14 +151,7 @@ const mgmtAttrFields: FieldList = [
     render: (val: string) => {
       const { bk_biz_id } = props.detail;
       const unassigned = bk_biz_id === -1;
-      return h('div', [
-        h(UserValue, { value: val }),
-        unassigned &&
-          h('i', {
-            class: 'icon hcm-icon bkhcm-icon-bianji edit-icon',
-            onclick: () => handleUpdateMgmtAttrSingle('bak_manager'),
-          }),
-      ]);
+      return h('div', [h(UserValue, { value: val }), unassigned && renderEditIcon('bak_manager')]);
     },
     copy: true,
     copyContent: (val: string) => val,
@@ -260,14 +246,7 @@ const settingInfo = computed(() => {
         name: t('主负责人'),
         prop: 'manager',
         render: (val: string) => {
-          return h('div', [
-            h(UserValue, { value: val }),
-            hasEditScopeInBusiness.value &&
-              h('i', {
-                class: 'icon hcm-icon bkhcm-icon-bianji edit-icon',
-                onclick: () => handleUpdateMgmtAttrSingle('manager'),
-              }),
-          ]);
+          return h('div', [h(UserValue, { value: val }), hasEditScopeInBusiness.value && renderEditIcon('manager')]);
         },
         copy: true,
         copyContent: (val: string) => val,
@@ -278,11 +257,7 @@ const settingInfo = computed(() => {
         render: (val: string) => {
           return h('div', [
             h(UserValue, { value: val }),
-            hasEditScopeInBusiness.value &&
-              h('i', {
-                class: 'icon hcm-icon bkhcm-icon-bianji edit-icon',
-                onclick: () => handleUpdateMgmtAttrSingle('bak_manager'),
-              }),
+            hasEditScopeInBusiness.value && renderEditIcon('bak_manager'),
           ]);
         },
         copy: true,
@@ -313,10 +288,6 @@ const mgmtAttrSingleDialogState = reactive<{
   field: undefined,
 });
 const handleUpdateMgmtAttrSingle = (field: SecurityGroupMgmtAttrSingleType) => {
-  if (!authVerifyData.value?.permissionAction?.[authAction.value]) {
-    handleAuth(authAction.value);
-    return;
-  }
   mgmtAttrSingleDialogState.isShow = true;
   mgmtAttrSingleDialogState.isHidden = false;
   mgmtAttrSingleDialogState.field = field;
@@ -358,19 +329,20 @@ const handleChange = async (val: any) => {
     <template v-else>
       <h3 class="info-title">
         使用范围
-        <bk-button
-          text
-          size="small"
-          theme="primary"
-          style="font-weight: 400; margin-left: 12px"
-          :disabled="!hasEditScopeInBusiness"
-          :class="{ 'hcm-no-permision-text-btn': !authVerifyData?.permissionAction?.[authAction] }"
-          v-bk-tooltips="operateTooltipsOption"
-          @click="handleUpdateMgmtAttrSingle('usage_biz_ids')"
-        >
-          <i class="icon hcm-icon bkhcm-icon-bianji edit-icon" />
-          <span style="margin-left: 4px">编辑</span>
-        </bk-button>
+        <hcm-auth :sign="updateSign" :ignore="authPending" tag="span" v-slot="{ noPerm }">
+          <bk-button
+            text
+            size="small"
+            theme="primary"
+            style="font-weight: 400; margin-left: 12px"
+            :disabled="noPerm || authPending || !hasEditScopeInBusiness"
+            v-bk-tooltips="noPerm ? { disabled: true } : operateTooltipsOption"
+            @click="handleUpdateMgmtAttrSingle('usage_biz_ids')"
+          >
+            <i class="icon hcm-icon bkhcm-icon-bianji edit-icon" />
+            <span style="margin-left: 4px">编辑</span>
+          </bk-button>
+        </hcm-auth>
       </h3>
       <div class="wrap-info">
         <detail-info

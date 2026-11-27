@@ -206,6 +206,14 @@ func genVpcResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resour
 	return genIaaSResourceResource(a)
 }
 
+// genRegionResource 地域没有实例级权限，仅支持 Update 操作。
+func genRegionResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
+	if a.Basic.Action != meta.Update {
+		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action: %s", a.Basic.Action)
+	}
+	return genIaaSResourceResource(a)
+}
+
 // genSubnetResource generate subnet related iam resource.
 func genSubnetResource(a *meta.ResourceAttribute) (client.ActionID, []client.Resource, error) {
 	return genIaaSResourceResource(a)
@@ -886,6 +894,8 @@ func genImageResource(a *meta.ResourceAttribute) (client.ActionID, []client.Reso
 			return genBizIaaSResResource(a)
 		}
 		return sys.AccountFind, []client.Resource{res}, nil
+	case meta.Update:
+		return sys.IaaSResOperate, []client.Resource{res}, nil
 	default:
 		return "", nil, errf.Newf(errf.InvalidParameter, "unsupported hcm action of image resource: %s", a.Basic.Action)
 	}

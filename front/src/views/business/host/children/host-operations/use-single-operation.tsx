@@ -2,8 +2,6 @@ import { ref } from 'vue';
 import { Checkbox } from 'bkui-vue';
 import { useBusinessStore } from '@/store';
 import { CLOUD_HOST_STATUS, VendorEnum } from '@/common/constant';
-import { useVerify } from '@/hooks';
-import { useGlobalPermissionDialog } from '@/store/useGlobalPermissionDialog';
 import Confirm, { confirmInstance } from '@/components/confirm';
 import { operationMap, OperationActions } from '@/views/business/host/children/host-operations';
 
@@ -18,8 +16,6 @@ const useSingleOperation = ({
   confirmSuccess: Function;
   confirmComplete: Function;
 }) => {
-  const { authVerifyData, handleAuth } = useVerify();
-  const globalPermissionDialog = useGlobalPermissionDialog();
   const currentOperateRowIndex = ref(-1);
 
   // 回收参数「云硬盘/EIP 随主机回收」
@@ -55,8 +51,7 @@ const useSingleOperation = ({
           <div>
             <Checkbox
               checked={isRecycleDiskWithCvm.value}
-              onChange={(checked) => (isRecycleDiskWithCvm.value = checked)}
-            >
+              onChange={(checked) => (isRecycleDiskWithCvm.value = checked)}>
               云硬盘随主机回收
             </Checkbox>
             <Checkbox checked={isRecycleEipWithCvm.value} onChange={(checked) => (isRecycleEipWithCvm.value = checked)}>
@@ -114,21 +109,6 @@ const useSingleOperation = ({
         disabled: true,
         tooltips: { content: `当前主机处于 ${CLOUD_HOST_STATUS[data.status]} 状态`, disabled: false },
         clickHandler,
-      };
-    }
-
-    // 预鉴权
-    const { authId, actionName } = operationMap[type];
-    const noPermission = !authVerifyData?.value?.permissionAction?.[authId];
-    if (authId && actionName && noPermission) {
-      return {
-        disabled: false,
-        noPermission: true,
-        tooltips: { disabled: true },
-        clickHandler: () => {
-          handleAuth(actionName);
-          globalPermissionDialog.setShow(true);
-        },
       };
     }
 

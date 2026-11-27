@@ -1,7 +1,7 @@
 import { Ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAccountStore } from '@/store';
-import { getQueryStringParams, localStorageActions } from '@/common/util';
+import { localStorageActions } from '@/common/util';
 import { GLOBAL_BIZS_KEY } from '@/common/constant';
 
 export const useWhereAmI = (): {
@@ -16,20 +16,19 @@ export const useWhereAmI = (): {
   const route = useRoute();
   const senario = computed(() => {
     if (!route) return;
+    if (/^\/resource\/bill\/.+$/.test(route.path)) return Senarios.bill;
     if (/^\/resource\/.+$/.test(route?.path)) return Senarios.resource;
     if (/^\/business\/.+$/.test(route.path)) return Senarios.business;
     if (/^\/service\/.+$/.test(route.path)) return Senarios.service;
     if (/^\/scheme\/.+$/.test(route.path)) return Senarios.scheme;
     if (/^\/bill\/.+$/.test(route.path)) return Senarios.bill;
-    if (/^\/403\/.+$/.test(route.path)) return Senarios.unauthorized;
     return Senarios.unknown;
   });
 
+  // 组件外（store、http）取不到路由，回退到拦截器写入的 accountStore.bizs
   const getBizsId = () => {
     const { bizs } = useAccountStore();
-    return Number(
-      bizs || getQueryStringParams(GLOBAL_BIZS_KEY) || localStorageActions.get(GLOBAL_BIZS_KEY, (value) => value),
-    );
+    return Number(route?.params?.bizId || bizs || localStorageActions.get(GLOBAL_BIZS_KEY, (value) => value));
   };
 
   /**

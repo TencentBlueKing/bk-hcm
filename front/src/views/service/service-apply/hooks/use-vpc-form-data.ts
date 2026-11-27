@@ -167,7 +167,7 @@ export default (cond: Cond) => {
     if (cond.vendor === VendorEnum.TCLOUD) {
       saveData.subnet = {
         name: subnet.name,
-        ipv4_cidr: formData.ipv4_cidr,
+        ipv4_cidr: subnet.ipv4_cidr,
         zone: subnet.zone?.[0],
       };
     }
@@ -180,7 +180,7 @@ export default (cond: Cond) => {
       saveData.subnet = {
         name: subnet.name,
         gateway_ip: `${subnet.ipv4_cidr.split('.').slice(0, 3).join('.')}.1`,
-        ipv4_cidr: formData.ipv4_cidr,
+        ipv4_cidr: subnet.ipv4_cidr,
         ipv6_enable: subnet.ipv6_enable,
       };
     }
@@ -189,7 +189,7 @@ export default (cond: Cond) => {
       saveData.resource_group_name = cond.resourceGroup;
       saveData.subnet = {
         name: subnet.name,
-        ipv4_cidr: formData.ipv4_cidr,
+        ipv4_cidr: subnet.ipv4_cidr,
       };
     }
 
@@ -197,7 +197,7 @@ export default (cond: Cond) => {
       saveData.routing_mode = routing_mode;
       saveData.subnet = {
         name: subnet.name,
-        ipv4_cidr: formData.ipv4_cidr,
+        ipv4_cidr: subnet.ipv4_cidr,
         private_ip_google_access: subnet.private_ip_google_access,
         enable_flow_logs: subnet.enable_flow_logs,
       };

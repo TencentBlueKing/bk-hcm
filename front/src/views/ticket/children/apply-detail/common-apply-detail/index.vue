@@ -148,7 +148,7 @@ const isNotEmptyDeliveryDetail = computed(() => deliveryDetail.value && delivery
       </div>
     </Panel>
     <Panel title="基本信息">
-      <GridContainer :column="2" :content-min-width="200" :content-max-width="500" :label-width="240">
+      <GridContainer :column="2" :content-min-width="0" :content-max-width="500" :label-width="150">
         <GridItem v-for="field in baseFields" :key="field.id" :label="field.name">
           <DisplayValue
             :property="field"
@@ -159,7 +159,7 @@ const isNotEmptyDeliveryDetail = computed(() => deliveryDetail.value && delivery
       </GridContainer>
     </Panel>
     <Panel title="参数信息">
-      <GridContainer :column="2" :content-min-width="200" :content-max-width="500" :label-width="240">
+      <GridContainer :column="2" :content-min-width="0" :content-max-width="500" :label-width="150">
         <GridItem v-for="field in displayParamsFields" :key="field.id" :label="field.name">
           <DisplayValue
             :property="field"
@@ -178,6 +178,10 @@ const isNotEmptyDeliveryDetail = computed(() => deliveryDetail.value && delivery
   display: flex;
   flex-direction: column;
   gap: 12px;
+
+  :deep(.item-content) {
+    overflow-wrap: anywhere;
+  }
 
   .status-panel {
     display: flex;

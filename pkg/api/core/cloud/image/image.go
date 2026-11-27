@@ -36,6 +36,7 @@ type BaseImage struct {
 	State         string        `json:"state"`
 	Type          string        `json:"type"`
 	OsType        enumor.OsType `json:"os_type"`
+	BkBizID       int64         `json:"bk_biz_id"`
 	core.Revision `json:",inline"`
 }
 

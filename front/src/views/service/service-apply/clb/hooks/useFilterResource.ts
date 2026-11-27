@@ -157,9 +157,11 @@ export default (formModel: ApplyClbModel) => {
       // 初始化ISP资源
       if (!resource[Isp]) resource[Isp] = [];
 
-      // 处理性能容量型资源
+      // 性能容量型：不展示简约型，以及静态表无指标的 clb.c5.*
       TypeSet?.forEach(({ SpecAvailabilitySet }) => {
-        const filteredSpecs = SpecAvailabilitySet.filter((spec) => spec.SpecType !== 'clb.c1.small');
+        const filteredSpecs = SpecAvailabilitySet.filter(
+          (spec) => spec.SpecType !== 'clb.c1.small' && !spec.SpecType?.startsWith('clb.c5.'),
+        );
         resource[Isp].push(...filteredSpecs);
         // 内网下无ISP资源，这里单独存储一份
         resource.withoutIsp.push(...filteredSpecs);

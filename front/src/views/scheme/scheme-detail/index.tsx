@@ -8,10 +8,10 @@ import DetailHeader from './components/detail-header';
 import SchemeInfoCard from './components/scheme-info-card';
 import IdcMapDisplay from './components/idc-map-display';
 import NetworkHeatMap from './components/network-heat-map';
+import HcmAuth from '@/components/auth/auth.vue';
+import { AUTH_DELETE_CLOUD_SELECTION_SCHEME } from '@/constants/auth-symbols';
 
 import './index.scss';
-import { useVerify } from '@/hooks';
-import PermissionDialog from '@/components/permission-dialog';
 
 export default defineComponent({
   name: 'SchemeDetailPage',
@@ -28,14 +28,7 @@ export default defineComponent({
     const idcList = ref<IIdcInfo[]>([]);
     const idcListLoading = ref(false);
 
-    const {
-      authVerifyData,
-      handleAuth,
-      handlePermissionConfirm,
-      handlePermissionDialog,
-      showPermissionDialog,
-      permissionParams,
-    } = useVerify();
+    const deleteAuthSign = { type: AUTH_DELETE_CLOUD_SELECTION_SCHEME };
 
     watch(
       () => route.query?.sid,
@@ -159,16 +152,15 @@ export default defineComponent({
                 onUpdate={handleUpdate}>
                 {{
                   operate: () => (
-                    <bk-button
-                      onClick={() => {
-                        if (authVerifyData.value.permissionAction.cloud_selection_delete) handleDel();
-                        else handleAuth('cloud_selection_delete');
+                    <HcmAuth sign={deleteAuthSign}>
+                      {{
+                        default: ({ noPerm }: { noPerm: boolean }) => (
+                          <bk-button class='del-btn' disabled={noPerm} onClick={handleDel}>
+                            删除
+                          </bk-button>
+                        ),
                       }}
-                      class={`del-btn ${
-                        !authVerifyData.value.permissionAction.cloud_selection_delete ? 'hcm-no-permision-btn' : ''
-                      }`}>
-                      删除
-                    </bk-button>
+                    </HcmAuth>
                   ),
                 }}
               </DetailHeader>
@@ -182,12 +174,6 @@ export default defineComponent({
             </>
           )}
         </bk-loading>
-        <PermissionDialog
-          isShow={showPermissionDialog.value}
-          onConfirm={handlePermissionConfirm}
-          onCancel={handlePermissionDialog}
-          params={permissionParams.value}
-        />
       </div>
     );
   },
