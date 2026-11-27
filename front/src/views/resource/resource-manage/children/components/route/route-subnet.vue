@@ -2,12 +2,16 @@
 import { ref, watch } from 'vue';
 
 import useQueryList from '../../../hooks/use-query-list';
+import { useResourceDetailRoute } from '../../../hooks/use-resource-detail-route';
+import { QueryRuleOPEnum } from '@/typings';
 
 const props = defineProps({
   detail: {
     type: Object,
   },
 });
+
+const { detailId } = useResourceDetailRoute();
 
 const columns = ref<any[]>([]);
 
@@ -105,6 +109,8 @@ watch(
         );
         break;
     }
+    // bk-table 对 columns prop 的 watch 仅监听引用变化，原地 push 不触发更新，需整体重新赋值
+    columns.value = [...columns.value];
   },
   {
     deep: true,
@@ -119,8 +125,8 @@ const { datas, pagination, isLoading, handlePageChange, handlePageSizeChange } =
       rules: [
         {
           field: 'route_table_id',
-          op: 'eq',
-          value: props.detail.id,
+          op: QueryRuleOPEnum.EQ,
+          value: detailId.value,
         },
       ],
     },

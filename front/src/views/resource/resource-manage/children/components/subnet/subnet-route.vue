@@ -205,6 +205,8 @@ watch(
         );
         break;
     }
+    // bk-table 对 columns prop 的 watch 仅监听引用变化，原地 push 不触发更新，需整体重新赋值
+    columns.value = [...columns.value];
     handleGetData();
   },
   {
