@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import { h, watch, ref, inject, computed, withDirectives, resolveComponent } from 'vue';
+import type { AwsDiskAttachment, Disk, VendorResource } from '@/typings/resource-detail';
+import { h, inject, computed, withDirectives, resolveComponent } from 'vue';
 import { bkTooltips, Button } from 'bkui-vue';
 
 import { useRoute } from 'vue-router';
@@ -8,7 +9,7 @@ import useUninstallDrive from '../../../hooks/use-uninstall-drive';
 import useQueryList from '../../../hooks/use-query-list';
 import { useResourceStore } from '@/store/resource';
 import { INSTANCE_CHARGE_MAP, VendorEnum } from '@/common/constant';
-import { timeFormatter } from '@/common/util';
+import { formatDiskBoolean, formatDiskExpiry } from '../../../common/disk-format';
 import routerAction from '@/router/utils/action';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { MENU_BUSINESS_DRIVE_DETAILS, MENU_RESOURCE_DETAIL } from '@/constants/menu-symbol';
@@ -31,7 +32,7 @@ const isResourcePage: any = inject('isResourcePage');
 const { authPending, updateSign } = useResourceDetailAuth(computed(() => props.data?.account_id));
 const HcmAuthComp = resolveComponent('hcm-auth');
 
-const { datas, triggerApi, isLoading } = useQueryList({}, 'disk', () => {
+const { datas, triggerApi, isLoading } = useQueryList({}, 'disks', () => {
   return Promise.all([resourceStore.getDiskListByCvmId(props.data.vendor, props.data.id)]);
 });
 
@@ -56,110 +57,9 @@ const generateTooltipsOptions = (data: any) => {
   };
 };
 
-const columns = ref([
-  {
-    label: '硬盘用途',
-    field: '',
-    render({ data }: any) {
-      return data.is_system_disk ? '系统盘' : '数据盘';
-    },
-  },
-  {
-    label: '硬盘名称',
-    field: 'name',
-  },
-  {
-    label: 'ID',
-    field: 'id',
-    sort: true,
-    render({ cell }: { cell: string }) {
-      return h(
-        Button,
-        {
-          text: true,
-          theme: 'primary',
-          onClick() {
-            const routeInfo: any = {};
-            if (whereAmI.value === Senarios.business) {
-              Object.assign(routeInfo, {
-                name: MENU_BUSINESS_DRIVE_DETAILS,
-                params: { bizId: route.params.bizId, id: cell },
-                query: { vendor: props.data.vendor },
-              });
-            } else {
-              // 挂载硬盘与主机厂商相同
-              Object.assign(routeInfo, {
-                name: MENU_RESOURCE_DETAIL,
-                params: { resourceType: 'drive', id: cell },
-                query: { accountId: route.query.accountId, vendor: props.data.vendor },
-              });
-            }
-            routerAction.redirect(routeInfo, { history: true });
-          },
-        },
-        [cell || '--'],
-      );
-    },
-  },
-  {
-    label: '状态',
-    field: 'status',
-  },
-  {
-    label: '容量(GB)',
-    field: 'disk_size',
-  },
-  {
-    label: '是否加密',
-    field: 'exencrypted',
-    render({ data }: any) {
-      return h('span', [data.exencrypted ? '是' : '否']);
-    },
-  },
-  {
-    label: '随主机销毁',
-    field: '',
-    render({ data }: any) {
-      const attachment = data?.extension?.attachment;
-      const host = attachment?.find((x: any) => x.instance_id === props.data.cloud_id);
-      // eslint-disable-next-line no-nested-ternary
-      return host ? (host.delete_on_termination ? '是' : '否') : '--';
-    },
-  },
-  {
-    label: '操作',
-    render({ data }: any) {
-      return h(
-        HcmAuthComp,
-        { sign: updateSign.value, ignore: authPending.value, tag: 'span' },
-        {
-          default: ({ noPerm }: { noPerm: boolean }) =>
-            withDirectives(
-              h(
-                Button,
-                {
-                  text: true,
-                  theme: 'primary',
-                  disabled:
-                    noPerm ||
-                    authPending.value ||
-                    data.is_system_disk ||
-                    (isResourcePage.value && props.data?.bk_biz_id !== -1),
-                  onClick() {
-                    handleUninstallDrive(data);
-                  },
-                },
-                ['卸载'],
-              ),
-              [[bkTooltips, noPerm ? { disabled: true } : generateTooltipsOptions(data)]],
-            ),
-        },
-      );
-    },
-  },
-]);
+type DiskTypeLabels = Record<VendorEnum.TCLOUD | VendorEnum.AWS, Record<string, string>>;
 
-const sysDiskTypeValues = {
+const sysDiskTypeValues: DiskTypeLabels = {
   [VendorEnum.TCLOUD]: {
     CLOUD_PREMIUM: '高性能云硬盘',
     CLOUD_BSSD: '通用型SSD云硬盘',
@@ -176,7 +76,7 @@ const sysDiskTypeValues = {
   },
 };
 
-const dataDiskTypeValues = {
+const dataDiskTypeValues: DiskTypeLabels = {
   [VendorEnum.TCLOUD]: {
     CLOUD_PREMIUM: '高性能云硬盘',
     CLOUD_BSSD: '通用型SSD云硬盘',
@@ -194,85 +94,160 @@ const dataDiskTypeValues = {
   },
 };
 
-watch(
-  () => props.data,
-  () => {
-    if (props.data.vendor === 'tcloud') {
-      columns.value.splice(
-        2,
-        4,
-        ...[
+const getHostAttachment = (attachments?: AwsDiskAttachment[]) =>
+  attachments?.find((item) => item.instance_id === props.data.cloud_id);
+
+const columns = computed(() => {
+  const { vendor } = props.data as { vendor: VendorEnum };
+
+  return [
+    {
+      label: '硬盘用途',
+      field: '',
+      render({ data }: any) {
+        return data.is_system_disk ? '系统盘' : '数据盘';
+      },
+    },
+    {
+      label: '硬盘名称',
+      field: 'name',
+    },
+    ...(vendor === VendorEnum.TCLOUD || vendor === VendorEnum.AWS
+      ? [
           {
             label: '硬盘类型',
             field: 'disk_type',
             render({ data }: any) {
-              if (data?.is_system_disk) {
-                return sysDiskTypeValues[VendorEnum.TCLOUD][data?.disk_type];
-              }
-              return dataDiskTypeValues[VendorEnum.TCLOUD][data?.disk_type];
+              const types = data.is_system_disk ? sysDiskTypeValues[vendor] : dataDiskTypeValues[vendor];
+              return types[data.disk_type] ?? data.disk_type ?? '--';
             },
           },
-          {
-            label: '容量(GB)',
-            field: 'disk_size',
-          },
-          {
-            label: '计费类型',
-            field: 'disk_charge_type',
-            render({ cell }: any) {
-              return INSTANCE_CHARGE_MAP[cell];
-            },
-          },
-          {
-            label: '到期时间',
-            field: '',
-            render({ cell }: any) {
-              return timeFormatter(cell) || '--';
-            },
-          },
-        ],
-      );
-    }
-    if (props.data.vendor === 'aws') {
-      columns.value.splice(
-        2,
-        0,
-        ...[
-          {
-            label: '硬盘类型',
-            field: 'disk_type',
-            render({ data }: any) {
-              if (data?.is_system_disk) {
-                return sysDiskTypeValues[VendorEnum.AWS][data?.disk_type];
-              }
-              return dataDiskTypeValues[VendorEnum.AWS][data?.disk_type];
-            },
-          },
+        ]
+      : []),
+    ...(vendor === VendorEnum.AWS
+      ? [
           {
             label: '设备名',
             field: 'device_name',
-            render({ data }: any) {
-              const attachment = data?.extension?.attachment;
-              const host = attachment.find((x: any) => x.instance_id === props.data.cloud_id);
-              return host.device_name;
+            render: ({ data }: { data: VendorResource<Disk, 'aws'> }) =>
+              getHostAttachment(data.extension?.attachment)?.device_name || '--',
+          },
+        ]
+      : []),
+    ...(vendor !== VendorEnum.TCLOUD
+      ? [
+          {
+            label: 'ID',
+            field: 'id',
+            sort: true,
+            render({ cell }: { cell: string }) {
+              return h(
+                Button,
+                {
+                  text: true,
+                  theme: 'primary',
+                  onClick() {
+                    const routeInfo: any = {};
+                    if (whereAmI.value === Senarios.business) {
+                      Object.assign(routeInfo, {
+                        name: MENU_BUSINESS_DRIVE_DETAILS,
+                        params: { bizId: route.params.bizId, id: cell },
+                        query: { vendor: props.data.vendor },
+                      });
+                    } else {
+                      // 挂载硬盘与主机厂商相同
+                      Object.assign(routeInfo, {
+                        name: MENU_RESOURCE_DETAIL,
+                        params: { resourceType: 'drive', id: cell },
+                        query: { accountId: route.query.accountId, vendor: props.data.vendor },
+                      });
+                    }
+                    routerAction.redirect(routeInfo, { history: true });
+                  },
+                },
+                [cell || '--'],
+              );
             },
           },
           {
-            label: '容量(GB)',
-            field: 'disk_size',
+            label: '状态',
+            field: 'status',
           },
-        ],
-      );
-    }
-    if (props.data.vendor === 'azure') {
-      columns.value.splice(6, 1);
-    }
-  },
-  {
-    deep: true,
-    immediate: true,
-  },
-);
+        ]
+      : []),
+    {
+      label: '容量(GB)',
+      field: 'disk_size',
+    },
+    ...(vendor === VendorEnum.TCLOUD
+      ? [
+          {
+            label: '计费类型',
+            field: 'disk_charge_type',
+            render: ({ data }: { data: VendorResource<Disk, 'tcloud'> }) =>
+              INSTANCE_CHARGE_MAP[data.extension?.disk_charge_type] || '--',
+          },
+          {
+            label: '到期时间',
+            field: 'deadline_time',
+            render: ({ data }: { data: VendorResource<Disk, 'tcloud'> }) =>
+              formatDiskExpiry(data.extension?.deadline_time),
+          },
+        ]
+      : [
+          {
+            label: '是否加密',
+            field: 'encrypted',
+            render: ({ data }: { data: Disk }) => formatDiskBoolean(data.extension?.encrypted),
+          },
+        ]),
+    ...(vendor !== VendorEnum.AZURE
+      ? [
+          {
+            label: '随主机销毁',
+            field: 'delete_with_instance',
+            render({ data }: { data: Disk }) {
+              if (data.vendor === VendorEnum.TCLOUD) return formatDiskBoolean(data.extension?.delete_with_instance);
+              if (data.vendor === VendorEnum.AWS)
+                return formatDiskBoolean(getHostAttachment(data.extension?.attachment)?.delete_on_termination);
+              return '--';
+            },
+          },
+        ]
+      : []),
+    {
+      label: '操作',
+      render({ data }: any) {
+        return h(
+          HcmAuthComp,
+          { sign: updateSign.value, ignore: authPending.value, tag: 'span' },
+          {
+            default: ({ noPerm }: { noPerm: boolean }) =>
+              withDirectives(
+                h(
+                  Button,
+                  {
+                    text: true,
+                    theme: 'primary',
+                    disabled:
+                      noPerm ||
+                      authPending.value ||
+                      data.is_system_disk ||
+                      (isResourcePage.value && props.data?.bk_biz_id !== -1),
+                    onClick() {
+                      handleUninstallDrive({ ...data, instance_id: data.cvm_id });
+                    },
+                  },
+                  ['卸载'],
+                ),
+                [[bkTooltips, noPerm ? { disabled: true } : generateTooltipsOptions(data)]],
+              ),
+          },
+        );
+      },
+    },
+  ];
+});
 </script>
 
 <template>

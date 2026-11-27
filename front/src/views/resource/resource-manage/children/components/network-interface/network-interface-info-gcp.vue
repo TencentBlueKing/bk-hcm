@@ -1,8 +1,11 @@
 <script lang="ts" setup>
+import type { NetworkInterface, VendorResource } from '@/typings/resource-detail';
+import { extensionPath } from '@/views/resource/resource-manage/common/info/extension-path';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
-import { h, ref, watchEffect } from 'vue';
+import { h, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import { CloudType, ConstantMapRecord } from '@/typings';
+import { CloudType } from '@/typings';
+import { formatGcpNetworkTier } from '../../../common/gcp-network-tier';
 import routerAction from '@/router/utils/action';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import {
@@ -14,14 +17,9 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
 import { FieldList } from '../../../common/info-list/types';
 
-const props = defineProps({
-  detail: {
-    type: Object,
-  },
-  isResourcePage: {
-    type: Boolean,
-  },
-});
+const props = defineProps<{ detail?: VendorResource<NetworkInterface, 'gcp'>; isResourcePage?: boolean }>();
+
+const fieldPath = extensionPath<VendorResource<NetworkInterface, 'gcp'>>();
 
 const route = useRoute();
 const { getBizsId } = useWhereAmI();
@@ -73,28 +71,28 @@ const fields = ref<FieldList>([
     name: '内网IPv4地址',
     prop: 'private_ipv4',
     render(cell: string[]) {
-      return cell.length ? cell.join(',') : '--';
+      return cell?.join(',') || '--';
     },
   },
   {
     name: '公网IPv4地址',
     prop: 'public_ipv4',
     render(cell: string[]) {
-      return cell.length ? cell.join(',') : '--';
+      return cell?.join(',') || '--';
     },
   },
   {
     name: '专用IP地址(IPv6)',
     prop: 'private_ipv6',
     render(cell: string[]) {
-      return cell.length ? cell.join(',') : '--';
+      return cell?.join(',') || '--';
     },
   },
   {
     name: '公用IP地址(IPv6)',
     prop: 'public_ipv6',
     render(cell: string[]) {
-      return cell.length ? cell.join(',') : '--';
+      return cell?.join(',') || '--';
     },
   },
   {
@@ -143,33 +141,22 @@ const fields = ref<FieldList>([
   },
   {
     name: '网络层级',
-    prop: 'networkTier',
-    render(val: string) {
-      const map: ConstantMapRecord = { PREMIUM: '高级', STANDARD: '标准' };
-      return map[val];
-    },
+    prop: fieldPath('extension.access_configs[0].network_tier'),
+    render: formatGcpNetworkTier,
   },
   {
     name: 'IP转发',
-    prop: 'can_ip_forward',
-    render(val: boolean) {
-      return val ? '开启' : '关闭';
+    prop: fieldPath('extension'),
+    render(extension: VendorResource<NetworkInterface, 'gcp'>['extension']) {
+      if (!extension) return '--';
+      return extension.can_ip_forward ? '开启' : '关闭';
     },
   },
 ]);
-
-const data = ref([]);
-
-watchEffect(() => {
-  data.value = {
-    ...props.detail,
-    networkTier: props.detail?.access_configs?.[0]?.network_tier,
-  };
-});
 </script>
 
 <template>
   <div class="field-list">
-    <detail-info :detail="data" :fields="fields" global-copyable label-width="150px" />
+    <detail-info :detail="props.detail" :fields="fields" global-copyable label-width="150px" />
   </div>
 </template>

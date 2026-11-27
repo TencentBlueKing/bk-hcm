@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { Cvm, ResourceDetailLabels, VendorResource } from '@/typings/resource-detail';
+import { extensionPath } from '@/views/resource/resource-manage/common/info/extension-path';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 
 import { PropType } from 'vue';
@@ -7,16 +9,18 @@ import { CLOUD_HOST_STATUS } from '@/common/constant';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '@/views/resource/resource-manage/common/info-list/types';
 
+const props = defineProps({
+  data: {
+    type: Object as PropType<VendorResource<Cvm, 'azure'> & ResourceDetailLabels>,
+  },
+});
+
 const shortCutStr = (str: string) => {
   if (!str) return str;
   return str.split('/').reverse()[0];
 };
 
-const props = defineProps({
-  data: {
-    type: Object as PropType<any>,
-  },
-});
+const fieldPath = extensionPath<VendorResource<Cvm, 'azure'>>();
 
 const cvmInfo: FieldList = [
   {
@@ -45,7 +49,7 @@ const cvmInfo: FieldList = [
   {
     name: '可用区域',
     render() {
-      return props.data.zones;
+      return props.data.extension?.zones;
     },
   },
   {
@@ -72,8 +76,9 @@ const cvmInfo: FieldList = [
   {
     name: '实例销毁保护',
     prop: 'disable_api_termination',
-    render() {
-      return props.data.disable_api_termination ? '是' : '否';
+    render(value?: boolean) {
+      if (typeof value !== 'boolean') return '--';
+      return value ? '是' : '否';
     },
   },
   {
@@ -91,8 +96,8 @@ const netInfo: FieldList = [
   },
   {
     name: '接口名称',
-    prop: 'cloud_network_interface_ids',
-    render: () => shortCutStr(props.data.cloud_network_interface_ids[0]),
+    prop: fieldPath('extension.cloud_network_interface_ids'),
+    render: () => shortCutStr(props.data.extension?.cloud_network_interface_ids?.[0]),
   },
   {
     name: '私有IPv4地址',

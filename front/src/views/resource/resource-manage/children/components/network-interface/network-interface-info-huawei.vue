@@ -1,6 +1,8 @@
 <script lang="ts" setup>
+import type { NetworkInterface, VendorResource } from '@/typings/resource-detail';
+import { extensionPath } from '@/views/resource/resource-manage/common/info/extension-path';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
-import { h, ref, watchEffect } from 'vue';
+import { h, ref } from 'vue';
 import { CloudType } from '@/typings';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -8,11 +10,9 @@ import { FieldList } from '../../../common/info-list/types';
 import routerAction from '@/router/utils/action';
 import { MENU_RESOURCE_ACCOUNT_DETAIL } from '@/constants/menu-symbol';
 
-const props = defineProps({
-  detail: {
-    type: Object,
-  },
-});
+const props = defineProps<{ detail?: VendorResource<NetworkInterface, 'huawei'> }>();
+
+const fieldPath = extensionPath<VendorResource<NetworkInterface, 'huawei'>>();
 
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
@@ -56,7 +56,7 @@ const fields = ref<FieldList>([
   },
   {
     name: '状态',
-    prop: 'portState',
+    prop: fieldPath('extension.port_state'),
   },
   {
     name: '所属VPC',
@@ -90,28 +90,20 @@ const fields = ref<FieldList>([
   },
   {
     name: '安全组ID',
-    prop: 'cloud_security_group_ids', // cloud_security_group_ids
+    prop: fieldPath('extension.cloud_security_group_ids'), // cloud_security_group_ids
     render(cell: string) {
       return cell || '--';
     },
   },
   {
     name: 'MAC地址',
-    prop: 'mac_addr',
+    prop: fieldPath('extension.mac_addr'),
   },
 ]);
-
-const data = ref([]);
-watchEffect(() => {
-  data.value = {
-    ...props.detail,
-    portState: props.detail?.port_state,
-  };
-});
 </script>
 
 <template>
   <div class="field-list">
-    <detail-info :detail="data" :fields="fields" global-copyable label-width="150px" />
+    <detail-info :detail="props.detail" :fields="fields" global-copyable label-width="150px" />
   </div>
 </template>

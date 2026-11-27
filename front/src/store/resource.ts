@@ -4,6 +4,7 @@ import rollRequest from '@blueking/roll-request';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import { VendorEnum } from '@/common/constant';
 import { FilterType } from '@/typings';
+import type { AttachedDisk, Eip, NetworkInterface, VendorResource } from '@/typings/resource-detail';
 // import { json2Query } from '@/common/util';
 
 const { BK_HCM_AJAX_URL_PREFIX } = window.PROJECT_CONFIG;
@@ -142,12 +143,12 @@ export const useResourceStore = defineStore({
     countSubnetIps(id: string | number) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}subnets/${id}/ips/count`);
     },
-    getEipListByCvmId(vendor: string, id: string) {
+    getEipListByCvmId<V extends string>(vendor: V, id: string): Promise<{ data: VendorResource<Eip, V>[] }> {
       return http.get(
         `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/eips/cvms/${id}`,
       );
     },
-    getDiskListByCvmId(vendor: string, id: string) {
+    getDiskListByCvmId<V extends string>(vendor: V, id: string): Promise<{ data: VendorResource<AttachedDisk, V>[] }> {
       return http.get(
         `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}vendors/${vendor}/disks/cvms/${id}`,
       );
@@ -175,7 +176,7 @@ export const useResourceStore = defineStore({
     getCommonList(data: any, url: string, config = {}) {
       return http.post(`${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath()}${url}`, data, config);
     },
-    getNetworkList(type: string, id: string) {
+    getNetworkList<V extends string>(type: V, id: string): Promise<{ data: VendorResource<NetworkInterface, V>[] }> {
       return http.get(
         `${BK_HCM_AJAX_URL_PREFIX}/api/v1/cloud/${getBusinessApiPath(
           type,

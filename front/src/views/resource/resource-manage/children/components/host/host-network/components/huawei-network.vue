@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { Cvm, NetworkInterface, VendorResource } from '@/typings/resource-detail';
+import { extensionPath } from '@/views/resource/resource-manage/common/info/extension-path';
 import { useI18n } from 'vue-i18n';
 import type {
   // PlainObject,
@@ -14,9 +16,11 @@ const props = defineProps({
     type: Object as PropType<FilterType>,
   },
   data: {
-    type: Object,
+    type: Object as PropType<VendorResource<Cvm, 'huawei'>>,
   },
 });
+
+const huaweiField = extensionPath<VendorResource<NetworkInterface, 'huawei'>>();
 
 const { t } = useI18n();
 const resourceStore = useResourceStore();
@@ -28,7 +32,7 @@ const showGroup = ref(false);
 const showPrivate = ref(false);
 
 const isLoading = ref(false);
-const tableData = ref([]);
+const tableData = ref<VendorResource<NetworkInterface, 'huawei'>[]>([]);
 const formInfo = [
   {
     name: '类型',
@@ -62,11 +66,12 @@ const formInfo = [
   },
   {
     name: '内网IPv4地址',
-    prop: 'private_ip',
+    prop: 'private_ipv4',
+    render: (addresses?: string[]) => addresses?.join(',') || '--',
   },
   {
     name: '状态',
-    prop: 'port_state',
+    prop: huaweiField('extension.port_state'),
   },
 ];
 
@@ -75,7 +80,6 @@ const fromData = reactive({
 });
 
 const handleToggleShow = (type: string) => {
-  console.log('type', type);
   if (type === 'network') {
     showNetworkDialog.value = !showNetworkDialog.value;
   } else if (type === 'virtual') {
@@ -108,30 +112,24 @@ const handleConfirmBind = () => {
 //   });
 // };
 
-const handleRadio = (item: any) => {
-  console.log(item);
-};
-
 const getNetWorkList = async () => {
   isLoading.value = true;
   try {
     const type = props.data.vendor;
     const { id } = props.data;
     const res = await resourceStore.getNetworkList(type, id);
-    console.log('res', res);
     res.data = res.data.map((item: any) => {
       item = {
         ...item,
         ...item.spec,
         ...item.attachment,
         ...item.revision,
-        ...item.extension,
       };
       return item;
     });
     tableData.value = res.data;
   } catch (error) {
-    console.log(error);
+    console.error(error);
   } finally {
     isLoading.value = false;
   }
@@ -239,14 +237,7 @@ getNetWorkList();
     <bk-table class="mt20" dark-header :data="[{ ip: 'testetstt' }]" :outer-border="false" show-overflow-tooltip>
       <bk-table-column label="内网IP">
         <div class="cell-flex">
-          <bk-radio
-            label=""
-            @click="
-              () => {
-                handleRadio(data);
-              }
-            "
-          />
+          <bk-radio label="" />
           <span class="pl10">{{ data.ip }}</span>
         </div>
       </bk-table-column>
@@ -339,14 +330,7 @@ getNetWorkList();
         <!-- eslint-disable vue/no-template-shadow -->
         <template #default="{ data }">
           <div class="cell-flex">
-            <bk-radio
-              label=""
-              @click="
-                () => {
-                  handleRadio(data);
-                }
-              "
-            />
+            <bk-radio label="" />
             <span class="pl10">{{ data.ip }}</span>
           </div>
         </template>
@@ -384,14 +368,7 @@ getNetWorkList();
             <!-- eslint-disable vue/no-template-shadow -->
             <template #default="{ data }">
               <div class="cell-flex">
-                <bk-radio
-                  label=""
-                  @click="
-                    () => {
-                      handleRadio(data);
-                    }
-                  "
-                />
+                <bk-radio label="" />
                 <span class="pl10">{{ data.ip }}</span>
               </div>
             </template>
@@ -411,28 +388,35 @@ getNetWorkList();
   font-size: 14px;
   margin-bottom: 8px;
 }
+
 .sub-title {
   font-size: 12px;
 }
+
 .cell-flex {
   display: flex;
   align-items: center;
 }
+
 .table-warp {
   padding: 20px;
-  border: 1px dashed rgb(225, 221, 221);
+  border: 1px dashed rgb(225 221 221);
+
   .table-flex {
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
 }
+
 .flex {
   display: flex;
   align-items: center;
 }
+
 .form-warp {
-  border-top: 1px solid rgb(225, 221, 221);
+  border-top: 1px solid rgb(225 221 221);
+
   .item-warp {
     margin-right: 40px;
   }
@@ -440,8 +424,5 @@ getNetWorkList();
 
 :deep(.detail-tab-main) .bk-tab-content {
   height: calc(100vh - 300px) !important;
-}
-
-.info-warp {
 }
 </style>

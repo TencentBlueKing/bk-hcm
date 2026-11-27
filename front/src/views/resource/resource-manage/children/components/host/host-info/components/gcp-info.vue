@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { Cvm, ResourceDetailLabels, VendorResource } from '@/typings/resource-detail';
+import { extensionPath } from '@/views/resource/resource-manage/common/info/extension-path';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 
 import { PropType } from 'vue';
@@ -8,13 +10,15 @@ import { useRegionsStore } from '@/store/useRegionsStore';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '@/views/resource/resource-manage/common/info-list/types';
 
-const { getRegionName } = useRegionsStore();
-
 const props = defineProps({
   data: {
-    type: Object as PropType<any>,
+    type: Object as PropType<VendorResource<Cvm, 'gcp'> & ResourceDetailLabels>,
   },
 });
+
+const { getRegionName } = useRegionsStore();
+
+const fieldPath = extensionPath<VendorResource<Cvm, 'gcp'>>();
 
 const cvmInfo: FieldList = [
   {
@@ -67,9 +71,9 @@ const cvmInfo: FieldList = [
   },
   {
     name: '实例销毁保护',
-    prop: 'disable_api_termination',
+    prop: fieldPath('extension.deletion_protection'),
     render() {
-      return props.data.disable_api_termination ? '是' : '否';
+      return props.data.extension?.deletion_protection ? '是' : '否';
     },
   },
   {
@@ -81,7 +85,7 @@ const cvmInfo: FieldList = [
 const netInfo: FieldList = [
   {
     name: '接口名称',
-    prop: 'cloud_network_interface_ids',
+    prop: fieldPath('extension.cloud_network_interface_ids'),
   },
   {
     name: '私有IPv4地址',
@@ -122,7 +126,7 @@ const netInfo: FieldList = [
   {
     name: 'IP转发',
     render() {
-      return props.data.can_ip_forward ? '开启' : '关闭';
+      return props.data.extension?.can_ip_forward ? '开启' : '关闭';
     },
   },
 ];

@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { SecurityGroup } from '@/typings/resource-detail';
+import { extensionPath } from '@/views/resource/resource-manage/common/info/extension-path';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 import { useResourceStore } from '@/store';
 import { useI18n } from 'vue-i18n';
@@ -36,6 +38,8 @@ const props = defineProps({
     type: Function as PropType<() => void>,
   },
 });
+
+const fieldPath = extensionPath<SecurityGroup>();
 
 const { t } = useI18n();
 
@@ -229,7 +233,12 @@ const settingInfo = computed(() => {
   if ([VendorEnum.TCLOUD, VendorEnum.AWS, VendorEnum.HUAWEI].includes(props.vendor)) {
     fields.splice(8, 0, { name: t('关联CVM实例数'), prop: 'cvm_count' });
     if (VendorEnum.AWS === props.vendor) {
-      fields.splice(9, 0, { name: t('所属VPC'), prop: 'vpc_id' }, { name: t('所属云VPC'), prop: 'cloud_vpc_id' });
+      fields.splice(
+        9,
+        0,
+        { name: t('所属VPC'), prop: fieldPath('extension.vpc_id') },
+        { name: t('所属云VPC'), prop: fieldPath('extension.cloud_vpc_id') },
+      );
     }
   } else if (VendorEnum.AZURE === props.vendor) {
     fields.splice(

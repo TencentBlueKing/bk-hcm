@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { Cvm, ResourceDetailLabels, VendorResource } from '@/typings/resource-detail';
+import { extensionPath } from '@/views/resource/resource-manage/common/info/extension-path';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 
 import { PropType } from 'vue';
@@ -11,9 +13,11 @@ import { isNil } from 'lodash';
 
 const props = defineProps({
   data: {
-    type: Object as PropType<any>,
+    type: Object as PropType<VendorResource<Cvm, 'aws'> & ResourceDetailLabels>,
   },
 });
+
+const fieldPath = extensionPath<VendorResource<Cvm, 'aws'>>();
 
 const { getRegionName } = useRegionsStore();
 
@@ -72,8 +76,9 @@ const cvmInfo: FieldList = [
   {
     name: '实例销毁保护',
     prop: 'disable_api_termination',
-    render() {
-      return props.data.disable_api_termination ? '是' : '否';
+    render(value?: boolean) {
+      if (typeof value !== 'boolean') return '--';
+      return value ? '是' : '否';
     },
   },
   {
@@ -125,13 +130,11 @@ const netInfo: FieldList = [
   },
   {
     name: '私有IP DNS名称(仅限IPv4)',
-    prop: 'private_dns_name',
-    render: ({ cell }: { cell: string }) => cell || '--',
+    prop: fieldPath('extension.private_dns_name'),
   },
   {
     name: '公有IPv4 DNS',
-    prop: 'dns_name',
-    render: ({ cell }: { cell: string }) => cell || '--',
+    prop: fieldPath('extension.dns_name'),
   },
 ];
 
@@ -143,7 +146,9 @@ const settingInfo: FieldList = [
   {
     name: 'CPU',
     render() {
-      return isNil(props?.data?.cpu_options?.core_count) ? '--' : `${props.data.cpu_options.core_count} 核`;
+      return isNil(props?.data?.extension?.cpu_options?.core_count)
+        ? '--'
+        : `${props.data.extension?.cpu_options.core_count} 核`;
     },
   },
   {

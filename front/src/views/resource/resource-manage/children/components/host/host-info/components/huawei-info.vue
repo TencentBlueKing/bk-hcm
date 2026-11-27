@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { Cvm, ResourceDetailLabels, VendorResource } from '@/typings/resource-detail';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 
 import { PropType } from 'vue';
@@ -11,7 +12,7 @@ import { isNil } from 'lodash';
 
 const props = defineProps({
   data: {
-    type: Object as PropType<any>,
+    type: Object as PropType<VendorResource<Cvm, 'huawei'> & ResourceDetailLabels>,
   },
 });
 
@@ -83,8 +84,9 @@ const cvmInfo: FieldList = [
   {
     name: '实例销毁保护',
     prop: 'disable_api_termination',
-    render() {
-      return props.data.disable_api_termination ? '是' : '否';
+    render(value?: boolean) {
+      if (typeof value !== 'boolean') return '--';
+      return value ? '是' : '否';
     },
   },
   {
@@ -165,13 +167,14 @@ const settingInfo: FieldList = [
   {
     name: 'CPU',
     render() {
-      return isNil(props.data?.flavor?.vcpus) ? '--' : `${props.data.flavor.vcpus} 核`;
+      return isNil(props.data?.extension?.flavor?.vcpus) ? '--' : `${props.data.extension?.flavor.vcpus} 核`;
     },
   },
   {
     name: '内存',
     render() {
-      return isNil(props.data?.flavor?.ram) ? '--' : `${props.data.flavor.ram} G`;
+      const ram = props.data?.extension?.flavor?.ram;
+      return ram && Number.isFinite(Number(ram)) ? `${Number(ram) / 1024} G` : '--';
     },
   },
   {

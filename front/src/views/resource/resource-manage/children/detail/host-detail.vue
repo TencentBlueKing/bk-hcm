@@ -11,7 +11,7 @@ import { useResourceStore } from '@/store/resource';
 
 import { useI18n } from 'vue-i18n';
 import { InfoBox, Message } from 'bkui-vue';
-import useDetail from '@/views/resource/resource-manage/hooks/use-detail';
+import { useResourceDetail } from '@/views/resource/resource-manage/hooks/use-detail';
 import {
   useResourceDetailAuth,
   useResourceDetailRoute,
@@ -55,7 +55,7 @@ const cvmInfo = ref({
   destroy: { op: '回收', loading: false },
 });
 
-const { loading, detail, getDetail } = useDetail('cvms', hostId.value);
+const { loading, detail, getDetail } = useResourceDetail('cvms', hostId.value);
 const { authPending, updateSign, deleteSign } = useResourceDetailAuth(computed(() => detail.value.account_id));
 
 watchEffect(() => {

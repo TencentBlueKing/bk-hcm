@@ -1,6 +1,8 @@
 import { Table, Loading, Radio, Message } from 'bkui-vue';
 import { InfoLine } from 'bkui-vue/lib/icon';
 import { defineComponent, h, ref } from 'vue';
+import type { PropType } from 'vue';
+import type { Disk } from '@/typings/resource-detail';
 import { useI18n } from 'vue-i18n';
 import StepDialog from '@/components/step-dialog/step-dialog';
 import useQueryList from '../../../hooks/use-query-list';
@@ -22,7 +24,7 @@ export default defineComponent({
       type: Boolean,
     },
     detail: {
-      type: Object,
+      type: Object as PropType<Disk>,
     },
   },
 
@@ -68,20 +70,16 @@ export default defineComponent({
     }
 
     if (props.detail.vendor === 'azure') {
-      // rules.push({
-      //   field: 'extension.resource_group_name',
-      //   op: 'json_eq',
-      //   value: props.detail.resource_group_name
-      // })
+      const zones = props.detail.extension?.zones;
       rules.splice(2, 1);
-      if (!props.detail.zones) {
+      if (!zones) {
         rules.push({
           field: 'extension',
           op: 'json_not_contains_path',
           value: 'zones',
         });
       }
-      if (Array.isArray(props.detail.zones) && props.detail.zones.length > 0) {
+      if (Array.isArray(zones) && zones.length > 0) {
         rules.push({
           op: 'or',
           rules: [
@@ -93,7 +91,7 @@ export default defineComponent({
             {
               field: 'extension.zones',
               op: 'json_overlaps',
-              value: props.detail.zones,
+              value: zones,
             },
           ],
         });

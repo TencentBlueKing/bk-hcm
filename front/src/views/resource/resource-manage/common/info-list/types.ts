@@ -2,6 +2,7 @@ import { IAuthSign } from '@/common/auth-service';
 import { JSX } from 'vue/jsx-runtime';
 
 type StringCell = string | ((cell: string) => string); // 字符串或者返回字符串的函数
+type CopyContent = StringCell | string[];
 
 type BaseField = {
   name: string;
@@ -19,16 +20,16 @@ type BaseField = {
   getAuthSign?: () => IAuthSign | IAuthSign[];
 };
 type FieldWithRenderString = BaseField & {
-  render: (value: BaseField['value']) => string | number;
-  copyContent?: StringCell; // 可选
+  render: (value: BaseField['value']) => string | number | string[];
+  copyContent?: CopyContent; // 可选
 };
 type FieldWithRenderJSX = BaseField & {
   render: (value: BaseField['value']) => JSX.Element | '--';
-  copyContent?: StringCell; // 必填
+  copyContent?: CopyContent; // 必填
 };
 type FieldWithoutRender = BaseField & {
   render?: never; // 不传
-  copyContent?: StringCell; // 可选
+  copyContent?: CopyContent; // 可选
 };
 
 export type Field = FieldWithRenderString | FieldWithRenderJSX | FieldWithoutRender;
@@ -37,7 +38,7 @@ export type Field = FieldWithRenderString | FieldWithRenderJSX | FieldWithoutRen
   2.如果 render 返回 string 或 render 未定义，copyContent 是可选的。
 */
 export type EnsureValidField<F extends Field> = F extends { render: (value: BaseField['value']) => JSX.Element | '--' }
-  ? (F & { copy: false }) | (F & { copyContent: StringCell })
+  ? (F & { copy: false }) | (F & { copyContent: CopyContent })
   : F;
 
 export type FieldList = Array<EnsureValidField<Field>>;

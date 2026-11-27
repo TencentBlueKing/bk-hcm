@@ -51,7 +51,7 @@ watch(datas, (list) => {
   dataList = list.map((item) => {
     fieldList.forEach((field) => {
       if (!Object.hasOwnProperty.call(item, field)) {
-        item[field] = '--';
+        Object.assign(item, { [field]: '--' });
       }
     });
     return item;

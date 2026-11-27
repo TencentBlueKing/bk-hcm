@@ -155,9 +155,9 @@ const useColumns = ({ columnType = 'cvms', isSimpleShow = false, vendor, extra }
   };
 };
 
-const useTableListQuery = (
+const useTableListQuery = <T extends string>(
   props: PropsType,
-  type = 'cvms',
+  type: T = 'cvms' as T,
   completeCallback: () => void,
   apiMethod?: Function,
   apiName = 'list',

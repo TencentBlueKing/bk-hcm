@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { Cvm, NetworkInterface, VendorResource } from '@/typings/resource-detail';
 import { useI18n } from 'vue-i18n';
 import type {
   // PlainObject,
@@ -15,14 +16,14 @@ const props = defineProps({
     type: Object as PropType<FilterType>,
   },
   data: {
-    type: Object,
+    type: Object as PropType<VendorResource<Cvm, 'azure'>>,
   },
 });
 
 const { t } = useI18n();
 const resourceStore = useResourceStore();
 const showBind = ref(false);
-const tableData = ref<any>([]);
+const tableData = ref<VendorResource<NetworkInterface, 'azure'>[]>([]);
 const isLoading = ref(false);
 
 const columns = [
@@ -33,21 +34,21 @@ const columns = [
   {
     label: t('类型'),
     field: 'id',
-    render({ data }: any) {
+    render({ data }: { data: VendorResource<NetworkInterface, 'azure'> }) {
       return [h('span', {}, [data?.extension?.type || '--'])];
     },
   },
   {
     label: t('内网IP'),
-    render({ data }: any) {
-      return [h('span', {}, [data.private_ipv4.join(',') || data.private_ipv6.join(',') || '--'])];
+    render({ data }: { data: VendorResource<NetworkInterface, 'azure'> }) {
+      return [h('span', {}, [data.private_ipv4?.join(',') || data.private_ipv6?.join(',') || '--'])];
     },
   },
   {
     label: t('普通公网IP/EIP'),
     field: 'public_ip',
-    render({ data }: any) {
-      return [h('span', {}, [data.public_ipv4.join(',') || data.public_ipv6.join(',') || '--'])];
+    render({ data }: { data: VendorResource<NetworkInterface, 'azure'> }) {
+      return [h('span', {}, [data.public_ipv4?.join(',') || data.public_ipv6?.join(',') || '--'])];
     },
   },
   {
@@ -102,20 +103,15 @@ const handleConfirmBind = () => {
 //   });
 // };
 
-const handleRadio = (item: any) => {
-  console.log(item);
-};
-
 const getNetWorkList = async () => {
   isLoading.value = true;
   try {
     const type = props.data.vendor;
     const { id } = props.data;
     const res = await resourceStore.getNetworkList(type, id);
-    console.log('res', res);
     tableData.value = res.data;
   } catch (error) {
-    console.log(error);
+    console.error(error);
   } finally {
     isLoading.value = false;
   }
@@ -147,14 +143,7 @@ getNetWorkList();
       <bk-table class="mt20" :columns="columns" show-overflow-tooltip>
         <bk-table-column label="内网IP">
           <div class="cell-flex">
-            <bk-radio
-              label=""
-              @click="
-                () => {
-                  handleRadio(data);
-                }
-              "
-            />
+            <bk-radio label="" />
             <span class="pl10">{{ data.ip }}</span>
           </div>
         </bk-table-column>
@@ -169,22 +158,27 @@ getNetWorkList();
   font-size: 14px;
   margin-bottom: 8px;
 }
+
 .sub-title {
   font-size: 12px;
 }
+
 .cell-flex {
   display: flex;
   align-items: center;
 }
+
 .table-warp {
   padding: 20px;
-  border: 1px dashed rgb(225, 221, 221);
+  border: 1px dashed rgb(225 221 221);
+
   .table-flex {
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
 }
+
 .flex {
   display: flex;
   align-items: center;

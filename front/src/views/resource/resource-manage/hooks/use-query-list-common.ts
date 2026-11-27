@@ -69,7 +69,6 @@ export default (props: PropsType, url: Ref<string>, extraConfig?: ExtraConfigTyp
           ...item.spec,
           ...item.attachment,
           ...item.revision,
-          ...item.extension,
         })) ?? [];
 
       // 基础list请求

@@ -1,11 +1,8 @@
 <script lang="ts" setup>
+import type { NetworkInterface, VendorResource } from '@/typings/resource-detail';
 import { ref, watchEffect } from 'vue';
 
-const props = defineProps({
-  detail: {
-    type: Object,
-  },
-});
+const props = defineProps<{ detail?: VendorResource<NetworkInterface, 'huawei'> }>();
 
 const columns = ref([
   {
@@ -38,7 +35,7 @@ watchEffect(() => {
     },
   ];
 
-  props.detail?.virtual_ip_list?.forEach(({ ip, elasticity_ip }: { ip: string; elasticity_ip: string }) => {
+  props.detail?.extension?.virtual_ip_list?.forEach(({ ip, elasticity_ip }) => {
     ipConfigData.value.push({
       type: '虚拟IP地址',
       internalIp: ip || '--',

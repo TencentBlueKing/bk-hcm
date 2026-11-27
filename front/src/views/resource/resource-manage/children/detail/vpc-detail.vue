@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { Vpc, VendorResource } from '@/typings/resource-detail';
+import { extensionPath } from '@/views/resource/resource-manage/common/info/extension-path';
 import { CloudType } from '@/typings/account';
 
 import DetailInfo from '../../common/info/detail-info';
@@ -12,7 +14,7 @@ import { ref, inject, computed, watch, watchEffect } from 'vue';
 import { InfoBox, Message } from 'bkui-vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import useDetail from '../../hooks/use-detail';
+import { useResourceDetail } from '../../hooks/use-detail';
 import { useResourceStore } from '@/store/resource';
 import { useRegionsStore } from '@/store/useRegionsStore';
 import { useBusinessMapStore } from '@/store/useBusinessMap';
@@ -22,6 +24,12 @@ import routerAction from '@/router/utils/action';
 import { MENU_RESOURCE_ACCOUNT_DETAIL } from '@/constants/menu-symbol';
 import { timeFormatter } from '@/common/util';
 import { FieldList } from '../../common/info-list/types';
+
+const tcloudField = extensionPath<VendorResource<Vpc, 'tcloud'>>();
+const awsField = extensionPath<VendorResource<Vpc, 'aws'>>();
+const azureField = extensionPath<VendorResource<Vpc, 'azure'>>();
+const gcpField = extensionPath<VendorResource<Vpc, 'gcp'>>();
+const huaweiField = extensionPath<VendorResource<Vpc, 'huawei'>>();
 
 const { getRegionName } = useRegionsStore();
 const { getNameFromBusinessMap } = useBusinessMapStore();
@@ -114,32 +122,32 @@ const { t } = useI18n();
 const { detailId } = useResourceDetailRoute();
 const { authPending, updateSign } = useResourceDetailAuth(computed(() => detail.value.account_id));
 
-const { loading, detail } = useDetail('vpcs', detailId.value, (detail: any) => {
+const { loading, detail } = useResourceDetail<'vpcs'>('vpcs', detailId.value, (detail) => {
   switch (detail.vendor) {
     case 'tcloud':
       VPCFields.value.push(
         ...[
           {
             name: '默认私有网络',
-            prop: 'is_default',
+            prop: tcloudField('extension.is_default'),
             render(val: boolean) {
               return val ? '是' : '否';
             },
           },
           {
             name: 'DNS服务器',
-            prop: 'dns_server_set',
+            prop: tcloudField('extension.dns_server_set'),
             tipsContent:
               '腾讯云默认DNS为：183.60.83.19，183.60.82.98，如果不使用腾讯云默认DNS，将无法使用内部服务，如windows激活、NTP、YUM等',
           },
           {
             name: '本地域名',
-            prop: 'domain_name',
+            prop: tcloudField('extension.domain_name'),
             tipsContent: '本地域名(Domain Name), 即VPC内主机的域名后缀',
           },
           {
             name: '组播',
-            prop: 'enable_multicast',
+            prop: tcloudField('extension.enable_multicast'),
             render(val: boolean) {
               return val ? '是' : '否';
             },
@@ -157,29 +165,29 @@ const { loading, detail } = useDetail('vpcs', detailId.value, (detail: any) => {
         ...[
           {
             name: '状态',
-            prop: 'state',
+            prop: awsField('extension.state'),
           },
           {
             name: 'DNS主机名',
-            prop: 'enable_dns_hostnames',
+            prop: awsField('extension.enable_dns_hostnames'),
             render(val: boolean) {
               return val ? '已启用' : '未启用';
             },
           },
           {
             name: 'DNS解析',
-            prop: 'enable_dns_support',
+            prop: awsField('extension.enable_dns_support'),
             render(val: boolean) {
               return val ? '已启用' : '未启用';
             },
           },
           {
             name: '租期',
-            prop: 'instance_tenancy',
+            prop: awsField('extension.instance_tenancy'),
           },
           {
             name: '默认VPC',
-            prop: 'is_default',
+            prop: awsField('extension.is_default'),
             render(val: boolean) {
               return val ? '是' : '否';
             },
@@ -197,7 +205,7 @@ const { loading, detail } = useDetail('vpcs', detailId.value, (detail: any) => {
         ...[
           {
             name: '资源组',
-            prop: 'resource_group_name',
+            prop: azureField('extension.resource_group_name'),
           },
           {
             name: '地域',
@@ -206,9 +214,9 @@ const { loading, detail } = useDetail('vpcs', detailId.value, (detail: any) => {
           },
           {
             name: 'DNS服务器',
-            prop: 'dns_servers',
+            prop: azureField('extension.dns_servers'),
             render(val: any) {
-              return val.length > 0 ? val : 'Azure提供的DNS服务';
+              return val?.length ? val : 'Azure提供的DNS服务';
             },
           },
         ],
@@ -220,25 +228,25 @@ const { loading, detail } = useDetail('vpcs', detailId.value, (detail: any) => {
         ...[
           {
             name: '是否默认创建子网',
-            prop: 'auto_create_subnetworks',
+            prop: gcpField('extension.auto_create_subnetworks'),
             render(val: boolean) {
               return val ? '是' : '否';
             },
           },
           {
             name: '动态路由模式',
-            prop: 'routing_mode',
+            prop: gcpField('extension.routing_mode'),
           },
           {
             name: 'VPC网络ULA内部IPv6范围',
-            prop: 'enable_ula_internal_ipv6',
+            prop: gcpField('extension.enable_ula_internal_ipv6'),
             render(val: boolean) {
               return val ? '已启用' : '未启用';
             },
           },
           {
             name: '最大传输单元',
-            prop: 'mtu',
+            prop: gcpField('extension.mtu'),
           },
           {
             name: '地域',
@@ -254,7 +262,7 @@ const { loading, detail } = useDetail('vpcs', detailId.value, (detail: any) => {
         ...[
           {
             name: '状态',
-            prop: 'status',
+            prop: huaweiField('extension.status'),
           },
           {
             name: '地域',

@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { RouteTable, VendorResource } from '@/typings/resource-detail';
+import { extensionPath } from '@/views/resource/resource-manage/common/info/extension-path';
 import { ref, watch } from 'vue';
 import DetailInfo from '../../../common/info/detail-info';
 import { useResourceStore } from '@/store/resource';
@@ -10,11 +12,9 @@ import routerAction from '@/router/utils/action';
 import { Senarios, useWhereAmI } from '@/hooks/useWhereAmI';
 import { MENU_BUSINESS_VPC_DETAILS, MENU_RESOURCE_ACCOUNT_DETAIL, MENU_RESOURCE_DETAIL } from '@/constants/menu-symbol';
 
-const props = defineProps({
-  detail: {
-    type: Object,
-  },
-});
+const props = defineProps<{ detail: RouteTable }>();
+
+const azureField = extensionPath<VendorResource<RouteTable, 'azure'>>();
 
 const resourceStore = useResourceStore();
 const route = useRoute();
@@ -182,7 +182,7 @@ watch(
           ...[
             {
               name: '资源组',
-              value: 'resource_group',
+              prop: azureField('extension.resource_group_name'),
             },
             {
               name: '地域ID',

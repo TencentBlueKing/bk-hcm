@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { Cvm, ResourceDetailLabels, VendorResource } from '@/typings/resource-detail';
+import { extensionPath } from '@/views/resource/resource-manage/common/info/extension-path';
 import DetailInfo from '@/views/resource/resource-manage/common/info/detail-info';
 
 import { PropType } from 'vue';
@@ -11,9 +13,11 @@ import { isNil } from 'lodash';
 
 const props = defineProps({
   data: {
-    type: Object as PropType<any>,
+    type: Object as PropType<VendorResource<Cvm, 'tcloud'> & ResourceDetailLabels>,
   },
 });
+
+const fieldPath = extensionPath<VendorResource<Cvm, 'tcloud'>>();
 
 const { getRegionName } = useRegionsStore();
 
@@ -71,9 +75,9 @@ const cvmInfo: FieldList = [
   },
   {
     name: '实例销毁保护',
-    prop: 'disable_api_termination',
+    prop: fieldPath('extension.disable_api_termination'),
     render() {
-      return props.data.disable_api_termination ? '是' : '否';
+      return props.data.extension?.disable_api_termination ? '是' : '否';
     },
   },
   {
@@ -133,13 +137,13 @@ const settingInfo: FieldList = [
   {
     name: 'CPU',
     render() {
-      return isNil(props?.data?.cpu) ? '--' : `${props.data.cpu} 核`;
+      return isNil(props?.data?.extension?.cpu) ? '--' : `${props.data.extension?.cpu} 核`;
     },
   },
   {
     name: '内存',
     render() {
-      return isNil(props?.data?.memory) ? '--' : `${props.data.memory} G`;
+      return isNil(props?.data?.extension?.memory) ? '--' : `${props.data.extension?.memory} G`;
     },
   },
   {
@@ -157,7 +161,7 @@ const settingInfo: FieldList = [
 const priceInfo: FieldList = [
   {
     name: '实例计费模式',
-    prop: 'instance_charge_type',
+    prop: fieldPath('extension.instance_charge_type'),
     render: () => INSTANCE_CHARGE_MAP[props?.data?.extension?.instance_charge_type] || '--',
   },
   {
