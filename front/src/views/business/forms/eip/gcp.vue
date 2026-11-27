@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { ref, watch, defineEmits, defineExpose, defineProps } from 'vue';
 
-const emit = defineEmits(['change']);
 const props = defineProps({
   region: {
     type: String,
   },
 });
-
+const emit = defineEmits(['change']);
 const formData = ref({
   eip_name: '',
   eip_count: 1,
@@ -43,7 +42,7 @@ const validate = () => {
 };
 
 watch(
-  () => formData,
+  [formData, type, () => props.region],
   () => {
     if (formData.value.network_tier === 'STANDARD') {
       formData.value.ip_version = 'IPV4';

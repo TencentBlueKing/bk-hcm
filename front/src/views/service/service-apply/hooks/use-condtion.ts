@@ -10,6 +10,10 @@ export type Cond = {
   resourceGroup?: string;
 };
 
+export function hasEmptyResourceCondition(accountId: string, vendor: string, region: string, resourceGroup?: string) {
+  return !accountId || !vendor || !region || (vendor === VendorEnum.AZURE && !resourceGroup);
+}
+
 export default () => {
   const { getBizsId, whereAmI } = useWhereAmI();
 
@@ -23,11 +27,10 @@ export default () => {
 
   const isEmptyCond = computed(() => {
     const isResourcePage = whereAmI.value === Senarios.resource;
-    const isEmpty = !cond.cloudAccountId || !cond.vendor || !cond.region || (!isResourcePage && !cond.bizId);
-    if (cond.vendor === VendorEnum.AZURE) {
-      return isEmpty || !cond.resourceGroup;
-    }
-    return isEmpty;
+    return (
+      hasEmptyResourceCondition(cond.cloudAccountId, cond.vendor, cond.region, cond.resourceGroup) ||
+      (!isResourcePage && !cond.bizId)
+    );
   });
 
   return {

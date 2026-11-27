@@ -8,6 +8,7 @@ import { PropType, computed, useTemplateRef, watch } from 'vue';
 import { useWhereAmI } from '@/hooks/useWhereAmI';
 import CommonCard from '@/components/CommonCard';
 import { useResourceAccountStore } from '@/store/useResourceAccountStore';
+import { useSelectedResourceAccount } from '@/views/resource-manage/account/use-resource-account';
 import { Form } from 'bkui-vue';
 
 const props = defineProps({
@@ -29,6 +30,13 @@ const emit = defineEmits([
 
 const { FormItem } = Form;
 
+const { isResourcePage } = useWhereAmI();
+const resourceAccountStore = useResourceAccountStore();
+const resourceAccount = useSelectedResourceAccount();
+const usesLeftAccount = computed(
+  () => isResourcePage && [ResourceTypeEnum.VPC, ResourceTypeEnum.DISK, ResourceTypeEnum.SUBNET].includes(props.type),
+);
+
 const accountSelectorRef = useTemplateRef<typeof AccountSelector>('account-selector');
 
 const selectedCloudAccountId = computed({
@@ -36,6 +44,7 @@ const selectedCloudAccountId = computed({
     return props.cloudAccountId;
   },
   set(val) {
+    if (usesLeftAccount.value) return;
     val && emit('update:cloudAccountId', val);
 
     const account = accountSelectorRef.value?.currentDisplayList.find((item: IAccountOption) => item.id === val);
@@ -73,20 +82,28 @@ const selectedResourceGroup = computed({
 });
 
 const handleChangeAccount = (account: IAccountItem) => {
+  if (usesLeftAccount.value) return;
   selectedVendor.value = account?.vendor ?? '';
   selectedRegion.value = '';
 };
 
-/**
- * 资源下申请主机、VPC、硬盘时无需选择业务，且无需走审批流程
- */
-const { isResourcePage } = useWhereAmI();
-const resourceAccountStore = useResourceAccountStore();
+watch(
+  [usesLeftAccount, () => resourceAccount.value?.id, () => resourceAccount.value?.vendor],
+  ([enabled, id, vendor]) => {
+    if (!enabled) return;
+    const allowed = id && vendor;
+    emit('update:cloudAccountId', allowed ? id : '');
+    emit('update:vendor', allowed ? vendor : '');
+    emit('update:region', '');
+    emit('update:resourceGroup', '');
+  },
+  { immediate: true },
+);
 
-// TODO: 这里是一个副作用，需要优化
 watch(
   () => resourceAccountStore.resourceAccount?.id,
   (id) => {
+    if (usesLeftAccount.value) return;
     selectedCloudAccountId.value = id;
     handleChangeAccount(resourceAccountStore.resourceAccount as IAccountItem);
   },
@@ -103,7 +120,7 @@ watch(
       required
       :property="[ResourceTypeEnum.SUBNET, ResourceTypeEnum.CLB].includes(type) ? 'account_id' : 'cloudAccountId'"
     >
-      <account-selector
+      <AccountSelector
         ref="account-selector"
         v-model="selectedCloudAccountId"
         :biz-id="isResourcePage ? undefined : props.bizs"
@@ -126,11 +143,12 @@ watch(
       />
     </FormItem>
     <FormItem label="云地域" required property="region" v-if="type !== ResourceTypeEnum.CLB">
-      <region-selector
+      <RegionSelector
         v-model="selectedRegion"
         :type="type"
         :vendor="selectedVendor"
         :account-id="selectedCloudAccountId"
+        :disabled="usesLeftAccount && !selectedVendor"
       />
     </FormItem>
     <slot />

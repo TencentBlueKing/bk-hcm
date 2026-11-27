@@ -25,7 +25,7 @@ const validate = () => {
   return formRef.value.validate();
 };
 
-watch(() => formData, handleChange, {
+watch([formData, () => props.region], handleChange, {
   immediate: true,
   deep: true,
 });

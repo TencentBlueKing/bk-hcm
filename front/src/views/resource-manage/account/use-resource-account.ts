@@ -1,4 +1,4 @@
-import { onBeforeMount, ref, watch, watchEffect } from 'vue';
+import { computed, onBeforeMount, ref, watch, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAccountStore } from '@/store';
 import { type IAccount, useResourceAccountStore } from '@/store/useResourceAccountStore';
@@ -21,6 +21,23 @@ const STAY_ROUTES: symbol[] = [
   MENU_RESOURCE_SUBNET_APPLY,
   MENU_RESOURCE_LOAD_BALANCER_APPLY,
 ];
+
+export const useSelectedResourceAccount = () => {
+  const route = useRoute();
+  const accountStore = useResourceAccountStore();
+
+  return computed(() => {
+    const id = route.query.accountId;
+    if (typeof id !== 'string' || !id) return undefined;
+
+    // 账号详情异步返回，只使用和当前地址匹配的账号。
+    const summary = accountStore.currentAccountSimpleInfo;
+    if (summary?.id === id && summary.vendor) return summary;
+
+    const account = accountStore.resourceAccount;
+    return account?.id === id && account.vendor ? account : undefined;
+  });
+};
 
 export const useResourceAccount = () => {
   const resourceAccountStore = useResourceAccountStore();

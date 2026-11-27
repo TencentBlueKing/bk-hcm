@@ -26,7 +26,7 @@ export default defineComponent({
   setup() {
     const { cond, isEmptyCond } = useCondtion();
     const { isResourcePage, whereAmI } = useWhereAmI();
-    const { formData, formRef, handleFormSubmit, submitting } = useVpcFormData(cond);
+    const { formData, formRef, handleFormSubmit, submitting } = useVpcFormData(cond, isEmptyCond);
     const resourceAccountStore = useResourceAccountStore();
     const { t } = useI18n();
     const router = useRouter();
@@ -93,8 +93,6 @@ export default defineComponent({
         subIpRef.value?.reset();
       }
     });
-
-    const submitDisabled = computed(() => isEmptyCond.value);
 
     const nameReg = /^(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?)$/;
     const nameRegMsg = '名称需要符合如下正则表达式: /(?:[a-z](?:[-a-z0-9]{0,61}[a-z0-9])?)/';
@@ -417,7 +415,7 @@ export default defineComponent({
               <Button
                 theme='primary'
                 loading={submitting.value}
-                disabled={submitDisabled.value}
+                disabled={isEmptyCond.value}
                 onClick={handleFormSubmit}>
                 {isResourcePage ? t('提交') : t('提交审批')}
               </Button>
