@@ -1,0 +1,137 @@
+/*
+ * TencentBlueKing is pleased to support the open source community by making
+ * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
+ * Copyright (C) 2022 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ * We undertake not to change the open source license (MIT license) applicable
+ *
+ * to the current version of the project delivered to anyone in the future.
+ */
+
+package iacplugin
+
+import (
+	proto "hcm/pkg/api/cloud-server"
+	coreplugin "hcm/pkg/api/core/plugin"
+	dataplugin "hcm/pkg/api/data-service/plugin"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/criteria/errf"
+	"hcm/pkg/iam/meta"
+	"hcm/pkg/kit"
+	"hcm/pkg/logs"
+	"hcm/pkg/rest"
+)
+
+// SwitchIaCPlugin 启用或停用 IaC 插件。
+func (s *svc) SwitchIaCPlugin(cts *rest.Contexts) (interface{}, error) {
+	req := new(proto.IaCPluginSwitchReq)
+	if err := cts.DecodeInto(req); err != nil {
+		logs.Errorf("decode switch iac plugin request failed, err: %v, rid: %s", err, cts.Kit.Rid)
+		return nil, errf.NewFromErr(errf.DecodeRequestFailed, err)
+	}
+
+	if err := req.Validate(); err != nil {
+		return nil, errf.NewFromErr(errf.InvalidParameter, err)
+	}
+
+	authRes := meta.ResourceAttribute{
+		Basic: &meta.Basic{
+			Type:   meta.IaCPlugin,
+			Action: meta.Update,
+		},
+	}
+	if err := s.authorizer.AuthorizeWithPerm(cts.Kit, authRes); err != nil {
+		logs.Errorf("switch iac plugin auth failed, err: %v, plugin_name: %s, rid: %s",
+			err, req.PluginName, cts.Kit.Rid)
+		return nil, err
+	}
+
+	if err := s.switchIaCPlugin(cts.Kit, req.PluginName, req.State); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
+// switchIaCPlugin 持插件名锁，按该插件名下版本最高的记录校验状态规则并更新其状态。
+func (s *svc) switchIaCPlugin(kt *kit.Kit, pluginName string, targetState enumor.IaCPluginState) error {
+	leaseID, err := s.mutex.TryLockIaCPlugin(kt, pluginName, constant.IaCPluginSwitchLockLeaseSeconds)
+	if err != nil {
+		return err
+	}
+	defer s.mutex.UnlockIaCPlugin(kt, pluginName, leaseID)
+
+	current, err := s.getLatestIaCPlugin(kt, pluginName)
+	if err != nil {
+		return err
+	}
+
+	return s.switchPluginState(kt, current, targetState)
+}
+
+func (s *svc) switchPluginState(kt *kit.Kit, current *coreplugin.IaCPlugin,
+	targetState enumor.IaCPluginState) error {
+
+	if current.State == targetState {
+		logs.Warnf("iac plugin %s@%s is already in %s state, skip switch, rid: %s",
+			current.PluginName, current.PluginVersion, targetState, kt.Rid)
+		return nil
+	}
+	if current.State == enumor.IaCPluginStateInit {
+		return errf.Newf(errf.Aborted, "iac plugin %s@%s registration or upgrade is not finished",
+			current.PluginName, current.PluginVersion)
+	}
+	if targetState == enumor.IaCPluginStateEnabled {
+		if current.State == enumor.IaCPluginStateFailed {
+			return errf.Newf(errf.Aborted, "iac plugin %s@%s is in failed state (%s), please recover first",
+				current.PluginName, current.PluginVersion, current.Message)
+		}
+		schemaExists, err := s.client.DataService().Global.IacPluginSchema.Exists(kt,
+			current.PluginName, current.PluginVersion)
+		if err != nil {
+			logs.Errorf("check iac plugin schema exists failed, err: %v, plugin_name: %s, plugin_version: %s, rid: %s",
+				err, current.PluginName, current.PluginVersion, kt.Rid)
+			return err
+		}
+		if !schemaExists {
+			return errf.Newf(errf.Aborted, "iac plugin %s@%s schema does not exist, please recover first",
+				current.PluginName, current.PluginVersion)
+		}
+	}
+
+	err := s.client.DataService().Global.IaCPlugin.Update(kt, &dataplugin.IaCPluginUpdateReq{
+		ID:           current.ID,
+		CurrentState: current.State,
+		State:        targetState,
+	})
+	if err != nil {
+		logs.Errorf("update iac plugin %s@%s state failed, err: %v, to_state: %s, rid: %s",
+			current.PluginName, current.PluginVersion, err, targetState, kt.Rid)
+		return err
+	}
+
+	return nil
+}
+
+func (s *svc) getLatestIaCPlugin(kt *kit.Kit, pluginName string) (*coreplugin.IaCPlugin, error) {
+	current, err := s.client.DataService().Global.IaCPlugin.GetLatest(kt, pluginName, nil)
+	if err != nil {
+		logs.Errorf("get latest iac plugin failed, err: %v, plugin_name: %s, rid: %s", err, pluginName, kt.Rid)
+		return nil, err
+	}
+	if current == nil {
+		return nil, errf.Newf(errf.RecordNotFound, "iac plugin %s not found", pluginName)
+	}
+
+	return current, nil
+}

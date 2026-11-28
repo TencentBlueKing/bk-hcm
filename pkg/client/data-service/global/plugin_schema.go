@@ -20,9 +20,12 @@
 package global
 
 import (
+	"fmt"
+
 	"hcm/pkg/api/core"
 	dataplugin "hcm/pkg/api/data-service/plugin"
 	"hcm/pkg/client/common"
+	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 )
@@ -65,4 +68,21 @@ func (c *IacPluginSchemaClient) List(kt *kit.Kit, req *dataplugin.IacPluginSchem
 
 	return common.Request[dataplugin.IacPluginSchemaListReq, dataplugin.IacPluginSchemaListResult](
 		c.client, rest.POST, kt, req, "/iac_plugin_schema/list")
+}
+
+// Exists 按插件名和版本查询 Schema 是否已落库。
+func (c *IacPluginSchemaClient) Exists(kt *kit.Kit, pluginName, pluginVersion string) (bool, error) {
+	resp, err := c.List(kt, &core.ListReq{
+		Fields: []string{"id"},
+		Filter: tools.ExpressionAnd(
+			tools.RuleEqual("plugin_name", pluginName),
+			tools.RuleEqual("plugin_version", pluginVersion),
+		),
+		Page: &core.BasePage{Limit: 1},
+	})
+	if err != nil {
+		return false, fmt.Errorf("list plugin %s@%s schema failed: %w", pluginName, pluginVersion, err)
+	}
+
+	return resp != nil && len(resp.Details) > 0, nil
 }

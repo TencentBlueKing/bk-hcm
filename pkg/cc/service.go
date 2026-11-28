@@ -297,6 +297,7 @@ type HCServiceSetting struct {
 	Cmdb          ApiGateway      `yaml:"cmdb"`
 	TFPlugin      TFPluginSetting `yaml:"tfPlugin"`
 	CCHostPoolBiz int64           `yaml:"ccHostPoolBiz"`
+	IaCPlugin     IaCPluginConfig `yaml:"iacPlugin"`
 }
 
 // trySetFlagBindIP try set flag bind ip.
@@ -311,6 +312,7 @@ func (s *HCServiceSetting) trySetDefault() {
 	s.Log.trySetDefault()
 	s.SyncConfig.trySetDefault()
 	s.TFPlugin.trySetDefault()
+	s.IaCPlugin.trySetDefault()
 
 	return
 }
@@ -339,6 +341,10 @@ func (s HCServiceSetting) Validate() error {
 
 	if s.CCHostPoolBiz == 0 {
 		return fmt.Errorf("ccHostPoolBiz should not be empty")
+	}
+
+	if err := s.IaCPlugin.Validate(); err != nil {
+		return err
 	}
 
 	return nil

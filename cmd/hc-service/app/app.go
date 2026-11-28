@@ -48,9 +48,17 @@ func Run(opt *options.Option) error {
 		return err
 	}
 
+	// 注册失败直接返回错误，进程非 0 退出，且不会注册到 etcd。
+	if err := hs.svc.RegisterPlugins(); err != nil {
+		return err
+	}
+
 	if err := hs.register(); err != nil {
 		return err
 	}
+
+	hs.svc.SetPluginReady()
+	hs.svc.StartPluginTasks()
 
 	shutdown.RegisterFirstShutdown(hs.finalizer)
 	shutdown.WaitShutdown(20)
@@ -116,6 +124,8 @@ func (ds *hcService) register() error {
 }
 
 func (ds *hcService) finalizer() {
+	ds.svc.StopPluginTasks()
+
 	if err := ds.sd.Deregister(); err != nil {
 		logs.Errorf("process service shutdown, but deregister failed, err: %v", err)
 		return

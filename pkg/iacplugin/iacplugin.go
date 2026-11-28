@@ -1,0 +1,136 @@
+/*
+ * TencentBlueKing is pleased to support the open source community by making
+ * 蓝鲸智云 - 混合云管理平台 (BlueKing - Hybrid Cloud Management System) available.
+ * Copyright (C) 2022 THL A29 Limited,
+ * a Tencent company. All rights reserved.
+ * Licensed under the MIT License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://opensource.org/licenses/MIT
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ *
+ * We undertake not to change the open source license (MIT license) applicable
+ *
+ * to the current version of the project delivered to anyone in the future.
+ */
+
+// Package iacplugin IaC 插件注册与升级的公共规则：版本比较，以及升级后继承上一版本的停用状态。
+package iacplugin
+
+import (
+	"fmt"
+	"strings"
+
+	coreplugin "hcm/pkg/api/core/plugin"
+	"hcm/pkg/criteria/enumor"
+	cvt "hcm/pkg/tools/converter"
+
+	"golang.org/x/mod/semver"
+)
+
+// ParseVersion 校验并规范化插件版本号：必须是三段式 主.次.修订，可带预发布后缀和 v 前缀。
+// 返回带 v 前缀的规范形式，供 semver 包比较使用。
+func ParseVersion(version string) (string, error) {
+	v := version
+	if len(v) > 0 && v[0] != 'v' {
+		v = "v" + v
+	}
+
+	if !semver.IsValid(v) {
+		return "", fmt.Errorf("invalid plugin version: %q", version)
+	}
+
+	// semver.IsValid 接受 v1、v1.2 这类简写，这里要求必须是完整的三段式。
+	if !hasThreeSegments(v) {
+		return "", fmt.Errorf("invalid plugin version: %q, expected major.minor.patch", version)
+	}
+
+	return v, nil
+}
+
+// NormalizeVersion 校验插件版本号并去掉前导 v 前缀，返回三段式规范字符串（如 "1.0.0"）。
+func NormalizeVersion(version string) (string, error) {
+	v, err := ParseVersion(version)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimPrefix(v, "v"), nil
+}
+
+// hasThreeSegments 判断 v 的主体部分（去掉预发布和构建信息）是否恰好有三段。
+// semver.IsValid 已经通过，这里只数主.次.修订。
+func hasThreeSegments(v string) bool {
+	body, _, _ := strings.Cut(v[1:], "-")
+	body, _, _ = strings.Cut(body, "+")
+	return len(strings.Split(body, ".")) == 3
+}
+
+// CompareVersion 按 semver 比较两个版本号，a<b 返回 -1，相等返回 0，a>b 返回 1。任一版本不合法返回错误。
+func CompareVersion(a, b string) (int, error) {
+	va, err := ParseVersion(a)
+	if err != nil {
+		return 0, err
+	}
+
+	vb, err := ParseVersion(b)
+	if err != nil {
+		return 0, err
+	}
+
+	return semver.Compare(va, vb), nil
+}
+
+// Latest 从同名插件的记录中选出满足筛选条件的版本最高记录；无匹配记录时返回 nil。
+// match 为可选筛选函数，传入多个时需全部满足才参与比较；不传则比较全部记录。
+// 参与比较的记录里存在不合法版本号时返回错误，调用方不应在不确定的版本上继续。
+func Latest(plugins []coreplugin.IaCPlugin, match ...func(coreplugin.IaCPlugin) bool) (*coreplugin.IaCPlugin, error) {
+	var latest *coreplugin.IaCPlugin
+	var latestVersion string
+	for i := range plugins {
+		if !matchAll(plugins[i], match) {
+			continue
+		}
+
+		version, err := ParseVersion(plugins[i].PluginVersion)
+		if err != nil {
+			return nil, err
+		}
+
+		if latest == nil || semver.Compare(version, latestVersion) > 0 {
+			latest = cvt.ValToPtr(plugins[i])
+			latestVersion = version
+		}
+	}
+
+	return latest, nil
+}
+
+func matchAll(rec coreplugin.IaCPlugin, filters []func(coreplugin.IaCPlugin) bool) bool {
+	for _, fn := range filters {
+		if fn != nil && !fn(rec) {
+			return false
+		}
+	}
+	return true
+}
+
+// CalcTargetState 计算 version 同步成功后的目标状态：
+// 存在更低的已完成版本（enabled / disabled）时沿用其最高版本的状态，否则返回 enabled。
+func CalcTargetState(records []coreplugin.IaCPlugin, version string) enumor.IaCPluginState {
+	previous, err := Latest(records, func(rec coreplugin.IaCPlugin) bool {
+		if rec.State != enumor.IaCPluginStateEnabled && rec.State != enumor.IaCPluginStateDisabled {
+			return false
+		}
+		cmp, err := CompareVersion(rec.PluginVersion, version)
+		return err == nil && cmp < 0
+	})
+	if err == nil && previous != nil {
+		return previous.State
+	}
+
+	return enumor.IaCPluginStateEnabled
+}
