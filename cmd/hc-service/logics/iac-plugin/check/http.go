@@ -17,96 +17,132 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-package httpplugin
+package check
 
 import (
-	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
-	"hcm/pkg/api/core"
+	httpplugin "hcm/cmd/hc-service/logics/iac-plugin/http-plugin"
 	coreplugin "hcm/pkg/api/core/plugin"
+	"hcm/pkg/client/data-service/global"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/iacplugin"
 	"hcm/pkg/kit"
 	"hcm/pkg/lock"
 	"hcm/pkg/logs"
 	"hcm/pkg/tools/slice"
 )
 
-// RunCheck 阻塞执行巡检，直到 ctx 取消。仅 isMaster 返回 true 的副本执行，避免多副本重复探活。
-func (s *Service) RunCheck(ctx context.Context, isMaster func() bool) {
-	failCounts := make(map[string]int)
+var _ Checker = (*HTTPChecker)(nil)
 
-	ticker := time.NewTicker(s.opts.CheckInterval)
-	defer ticker.Stop()
+// HTTPOptions http 插件巡检器的运行参数。
+type HTTPOptions struct {
+	// Interval 巡检周期。
+	Interval time.Duration
+	// FailureThreshold enabled 插件连续探活失败多少次后置为 failed。
+	FailureThreshold int
+	// LockLeaseSeconds 插件名锁租约（秒）。
+	LockLeaseSeconds int64
+}
 
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			if !isMaster() {
-				clear(failCounts)
-				continue
-			}
-			s.checkRound(ctx, failCounts)
-		}
+// HTTPChecker 周期性巡检 http 插件，仅 master 副本执行，避免多副本重复探活。
+type HTTPChecker struct {
+	cli        *global.IaCPluginClient
+	mutex      *lock.EtcdMutex
+	httpSvc    *httpplugin.Service
+	isMaster   func() bool
+	opts       HTTPOptions
+	failCounts map[string]int
+}
+
+// NewHTTPChecker 创建 http 插件巡检器。
+func NewHTTPChecker(cli *global.IaCPluginClient, mutex *lock.EtcdMutex, httpSvc *httpplugin.Service,
+	isMaster func() bool, opts HTTPOptions) *HTTPChecker {
+
+	return &HTTPChecker{
+		cli:        cli,
+		mutex:      mutex,
+		httpSvc:    httpSvc,
+		isMaster:   isMaster,
+		opts:       opts,
+		failCounts: make(map[string]int),
 	}
 }
 
-// checkRound 一轮巡检：对所有 http 插件逐个（串行）走升级流程。
-func (s *Service) checkRound(ctx context.Context, failCounts map[string]int) {
-	// 后端任务使用后端操作 kit：data-service 会校验请求头里的操作人与 AppCode，审计操作人即 hcm-backend-admin。
-	kt := core.NewBackendKit()
-	kt.Ctx = ctx
+// Name 返回检查器标识。
+func (c *HTTPChecker) Name() string {
+	return string(enumor.IaCPluginProtocolHTTP)
+}
 
-	names, err := s.listHTTPPluginNames(kt)
+// Interval 返回巡检周期。
+func (c *HTTPChecker) Interval() time.Duration {
+	return c.opts.Interval
+}
+
+// Check 执行一轮巡检，返回 false 以保持周期调度。
+func (c *HTTPChecker) Check(kt *kit.Kit) bool {
+	if !c.isMaster() {
+		clear(c.failCounts)
+		return false
+	}
+
+	names, err := c.listHTTPPluginNames(kt)
 	if err != nil {
 		logs.Warnf("list http iac plugins failed, skip this check round, err: %v, rid: %s", err, kt.Rid)
-		return
+		return false
 	}
 
 	for _, name := range names {
-		if ctx.Err() != nil {
-			return
+		if kt.Ctx.Err() != nil {
+			return false
 		}
-		s.checkPlugin(kt, name, failCounts)
+		c.checkPlugin(kt, name)
 	}
+	return false
 }
 
 // checkPlugin 巡检一个插件。拿不到锁跳过本轮；探活失败按状态计数或告警；探活成功走升级判定（含 failed 恢复）。
-func (s *Service) checkPlugin(kt *kit.Kit, pluginName string, failCounts map[string]int) {
-	leaseID, err := s.mutex.TryLockWithTTL(lock.IaCPluginKey(pluginName), s.opts.LockLeaseSeconds)
+func (c *HTTPChecker) checkPlugin(kt *kit.Kit, pluginName string) {
+	leaseID, err := c.mutex.TryLockWithTTL(lock.IaCPluginKey(pluginName), c.opts.LockLeaseSeconds)
 	if err != nil {
 		if !errors.Is(err, lock.ErrLockFailed) {
 			logs.Warnf("lock http iac plugin %s for check failed, skip, err: %v, rid: %s", pluginName, err, kt.Rid)
 		}
 		return
 	}
-	defer s.mutex.UnlockIaCPlugin(kt, pluginName, leaseID)
+	defer c.mutex.UnlockIaCPlugin(kt, pluginName, leaseID)
 
-	records, latest, err := s.listAndGetLatest(kt, pluginName)
+	records, err := c.cli.ListAll(kt, tools.EqualExpression("plugin_name", pluginName), nil)
 	if err != nil {
 		logs.Warnf("list http iac plugin %s for check failed, skip, err: %v, rid: %s", pluginName, err, kt.Rid)
 		return
 	}
 
-	ext, err := parseExtension(latest)
-	if err != nil {
-		logs.Warnf("check http iac plugin %s failed, err: %v, rid: %s", pluginName, err, kt.Rid)
+	latest, err := iacplugin.Latest(records)
+	if err != nil || latest == nil {
+		logs.Warnf("get latest http iac plugin %s for check failed, skip, err: %v, rid: %s", pluginName, err, kt.Rid)
 		return
 	}
 
-	version, err := s.probe(kt, pluginName, ext.APIPath)
-	if err != nil {
-		s.onProbeFailed(kt, latest, failCounts, err)
+	ext := new(coreplugin.HTTPExtension)
+	if err := json.Unmarshal([]byte(latest.Extension), ext); err != nil {
+		logs.Warnf("parse http iac plugin %s@%s extension failed, err: %v, rid: %s", latest.PluginName,
+			latest.PluginVersion, err, kt.Rid)
 		return
 	}
-	delete(failCounts, pluginName)
 
-	result, err := s.upgradeTo(kt, records, latest, version)
+	version, err := c.httpSvc.Probe(kt, pluginName, ext.APIPath)
+	if err != nil {
+		c.onProbeFailed(kt, latest, err)
+		return
+	}
+	delete(c.failCounts, pluginName)
+
+	result, err := c.httpSvc.UpgradeTo(kt, records, latest, version)
 	if err != nil {
 		logs.Warnf("check http iac plugin %s@%s, upgrade to probed version %s failed, err: %v, rid: %s",
 			pluginName, latest.PluginVersion, version, err, kt.Rid)
@@ -120,25 +156,25 @@ func (s *Service) checkPlugin(kt *kit.Kit, pluginName string, failCounts map[str
 }
 
 // onProbeFailed enabled 插件连续失败达到阈值改为 failed 并写原因；disabled 等其他状态只告警，不改记录。
-func (s *Service) onProbeFailed(kt *kit.Kit, latest *coreplugin.IaCPlugin, failCounts map[string]int, cause error) {
+func (c *HTTPChecker) onProbeFailed(kt *kit.Kit, latest *coreplugin.IaCPlugin, cause error) {
 	if latest.State != enumor.IaCPluginStateEnabled {
-		delete(failCounts, latest.PluginName)
+		delete(c.failCounts, latest.PluginName)
 		logs.Warnf("check http iac plugin %s@%s (%s) probe failed, err: %v, rid: %s", latest.PluginName,
 			latest.PluginVersion, latest.State, cause, kt.Rid)
 		return
 	}
 
-	failCounts[latest.PluginName]++
-	n := failCounts[latest.PluginName]
+	c.failCounts[latest.PluginName]++
+	n := c.failCounts[latest.PluginName]
 	logs.Warnf("check http iac plugin %s@%s probe failed, consecutive: %d/%d, err: %v, rid: %s", latest.PluginName,
-		latest.PluginVersion, n, s.opts.FailureThreshold, cause, kt.Rid)
-	if n < s.opts.FailureThreshold {
+		latest.PluginVersion, n, c.opts.FailureThreshold, cause, kt.Rid)
+	if n < c.opts.FailureThreshold {
 		return
 	}
-	delete(failCounts, latest.PluginName)
+	delete(c.failCounts, latest.PluginName)
 
 	reason := fmt.Errorf("probe failed %d consecutive times: %v", n, cause)
-	err := s.dataCli.Global.IaCPlugin.MarkFailed(kt, latest.ID, enumor.IaCPluginStateEnabled, reason)
+	err := c.cli.MarkFailed(kt, latest.ID, enumor.IaCPluginStateEnabled, reason)
 	if err != nil {
 		logs.Errorf("mark http iac plugin %s@%s as failed failed, err: %v, rid: %s", latest.PluginName,
 			latest.PluginVersion, err, kt.Rid)
@@ -150,8 +186,8 @@ func (s *Service) onProbeFailed(kt *kit.Kit, latest *coreplugin.IaCPlugin, failC
 }
 
 // listHTTPPluginNames 列出所有 http 插件名（去重）。
-func (s *Service) listHTTPPluginNames(kt *kit.Kit) ([]string, error) {
-	details, err := s.dataCli.Global.IaCPlugin.ListAll(kt,
+func (c *HTTPChecker) listHTTPPluginNames(kt *kit.Kit) ([]string, error) {
+	details, err := c.cli.ListAll(kt,
 		tools.EqualExpression("protocol", enumor.IaCPluginProtocolHTTP), []string{"plugin_name"})
 	if err != nil {
 		return nil, err

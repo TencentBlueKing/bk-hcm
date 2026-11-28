@@ -17,6 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
+// Package register 实现 tf_provider 插件的启动注册与升级。
 package register
 
 import (
@@ -37,6 +38,7 @@ import (
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
+	tabletypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/iacplugin"
 	"hcm/pkg/kit"
 	"hcm/pkg/lock"
@@ -109,30 +111,117 @@ func (s *Service) Register(kt *kit.Kit, entry discovery.PluginEntry) error {
 		return err
 	}
 
-	decision, err := Decide(records, entry.PluginVersion)
-	if err != nil {
-		return fmt.Errorf("decide plugin %s failed: %w", entry.PluginName, err)
+	return s.registerWithRecords(kt, entry, records)
+}
+
+// registerWithRecords 按同名插件的已有记录执行本版本的校验或注册。
+func (s *Service) registerWithRecords(kt *kit.Kit, entry discovery.PluginEntry,
+	records []coreplugin.IaCPlugin) error {
+
+	if _, err := iacplugin.ParseVersion(entry.PluginVersion); err != nil {
+		return err
 	}
-	logs.Infof("plugin %s@%s decision: %s (%s), rid: %s", entry.PluginName, entry.PluginVersion,
-		decision.Action, decision.Reason, kt.Rid)
+	for _, rec := range records {
+		if rec.Protocol != enumor.IaCPluginProtocolTFProvider {
+			return fmt.Errorf("plugin %s is registered with protocol %s, but the local directory is a %s",
+				rec.PluginName, rec.Protocol, enumor.IaCPluginProtocolTFProvider)
+		}
+	}
 
-	switch decision.Action {
-	case enumor.IaCPluginActionExit:
-		return fmt.Errorf("%w: %s", errPluginVersionConflict, decision.Reason)
+	match, err := matchPluginVersionRecord(records, entry.PluginVersion)
+	if err != nil {
+		return err
+	}
 
-	case enumor.IaCPluginActionVerify:
-		return s.verifyRecord(kt, entry, decision.Record)
+	if match != nil {
+		switch match.State {
+		case enumor.IaCPluginStateEnabled, enumor.IaCPluginStateDisabled:
+			return s.verifyExistingRecord(kt, entry, match, records)
+		case enumor.IaCPluginStateInit, enumor.IaCPluginStateFailed:
+			// 上次注册中断或失败，继续走注册重入。
+		default:
+			return fmt.Errorf("plugin record %s has an unknown state %q", match.ID, match.State)
+		}
+	}
 
-	case enumor.IaCPluginActionRegister:
-		id, err := s.saveInitRecord(kt, entry, decision.Record)
-		if err != nil {
+	return s.registerVersion(kt, entry, match, records)
+}
+
+// verifyExistingRecord 校验已注册完成的同版本记录；仅当已完成最高版本为 enabled 且高于本版本时拒绝。
+func (s *Service) verifyExistingRecord(kt *kit.Kit, entry discovery.PluginEntry, match *coreplugin.IaCPlugin,
+	records []coreplugin.IaCPlugin) error {
+
+	completedHighest, err := iacplugin.Latest(records, func(rec coreplugin.IaCPlugin) bool {
+		return rec.State == enumor.IaCPluginStateEnabled || rec.State == enumor.IaCPluginStateDisabled
+	})
+	if err != nil {
+		return err
+	}
+	if completedHighest != nil && completedHighest.State == enumor.IaCPluginStateEnabled {
+		if err = rejectVersionLowerThan(entry.PluginVersion, completedHighest); err != nil {
 			return err
 		}
-		return s.syncSchemaAndUpdate(kt, entry, id, records)
-
-	default:
-		return fmt.Errorf("unexpected decision action %q", decision.Action)
 	}
+
+	logs.Infof("plugin %s@%s is already registered as %s, verify sha256, rid: %s",
+		entry.PluginName, entry.PluginVersion, match.State, kt.Rid)
+	return s.verifyRecord(kt, entry, match)
+}
+
+// registerVersion 执行新版本注册或 init / failed 重入，写入前校验不得低于全量最高版本。
+func (s *Service) registerVersion(kt *kit.Kit, entry discovery.PluginEntry, match *coreplugin.IaCPlugin,
+	records []coreplugin.IaCPlugin) error {
+
+	highest, err := iacplugin.Latest(records)
+	if err != nil {
+		return err
+	}
+	if err = rejectVersionLowerThan(entry.PluginVersion, highest); err != nil {
+		return err
+	}
+
+	if match != nil {
+		logs.Infof("plugin %s@%s previous registration state is %s, re-register, rid: %s",
+			entry.PluginName, entry.PluginVersion, match.State, kt.Rid)
+	} else {
+		logs.Infof("plugin %s@%s is not registered, register now, rid: %s",
+			entry.PluginName, entry.PluginVersion, kt.Rid)
+	}
+
+	id, err := s.saveInitRecord(kt, entry, match)
+	if err != nil {
+		return err
+	}
+	return s.syncSchemaAndUpdate(kt, entry, id, records)
+}
+
+func rejectVersionLowerThan(localVersion string, highest *coreplugin.IaCPlugin) error {
+	if highest == nil {
+		return nil
+	}
+	cmp, err := iacplugin.CompareVersion(localVersion, highest.PluginVersion)
+	if err != nil {
+		return err
+	}
+	if cmp < 0 {
+		return fmt.Errorf("%w: local plugin version %s is lower than the highest registered version %s",
+			errPluginVersionConflict, localVersion, highest.PluginVersion)
+	}
+	return nil
+}
+
+// matchPluginVersionRecord 返回版本号等于 version 的记录。没有这条记录时返回 nil。
+func matchPluginVersionRecord(records []coreplugin.IaCPlugin, version string) (*coreplugin.IaCPlugin, error) {
+	for i := range records {
+		cmp, err := iacplugin.CompareVersion(records[i].PluginVersion, version)
+		if err != nil {
+			return nil, fmt.Errorf("plugin record %s has an invalid version: %w", records[i].ID, err)
+		}
+		if cmp == 0 {
+			return cvt.ValToPtr(records[i]), nil
+		}
+	}
+	return nil, nil
 }
 
 // saveInitRecord 把该版本的记录落库为 init，返回记录 ID 供同步流程收尾。
@@ -162,44 +251,78 @@ func (s *Service) saveInitRecord(kt *kit.Kit, entry discovery.PluginEntry, rec *
 }
 
 // verifyRecord 已注册完成的版本只校验本架构 sha256，不拉起进程、不同步 Schema。
+// 本架构一致直接通过，不一致返回冲突退出，缺失则补写本架构 hash（其它架构保持不变）。
 func (s *Service) verifyRecord(kt *kit.Kit, entry discovery.PluginEntry, rec *coreplugin.IaCPlugin) error {
-	result, err := VerifyHash(rec, entry.Arch, entry.SHA256)
-	if err != nil {
-		return err
+	if rec == nil {
+		return fmt.Errorf("plugin record is nil")
 	}
 
-	switch result {
-	case enumor.IaCPluginHashResultMatch:
-		return nil
+	var ext coreplugin.TFProviderExtension
+	if len(rec.Extension) != 0 {
+		if err := json.Unmarshal([]byte(rec.Extension), &ext); err != nil {
+			return fmt.Errorf("plugin record %s has an invalid extension: %w", rec.ID, err)
+		}
+	}
 
-	case enumor.IaCPluginHashResultMismatch:
+	if recorded, ok := ext.Architectures[entry.Arch]; ok && recorded != "" {
+		if recorded == entry.SHA256 {
+			return nil
+		}
 		// 同一版本号下本架构的文件内容变了：不修改任何记录，进程退出。
 		return fmt.Errorf("%w: plugin %s@%s sha256 of %s differs from the registered one, "+
 			"bump the plugin version instead of replacing the binary", errPluginVersionConflict, entry.PluginName,
 			entry.PluginVersion, entry.Arch)
-
-	case enumor.IaCPluginHashResultMissing:
-		// 例如首个 arm64 副本第一次启动：补写本架构的 hash，其它架构的值保持不变。
-		ext, err := WithArchHash(rec.Extension, entry.Arch, entry.SHA256)
-		if err != nil {
-			return err
-		}
-		err = s.dataCli.Global.IaCPlugin.Update(kt, &dataplugin.IaCPluginUpdateReq{
-			ID:           rec.ID,
-			CurrentState: rec.State,
-			State:        rec.State,
-			Message:      cvt.ValToPtr(""),
-			Extension:    ext,
-		})
-		if err != nil {
-			return fmt.Errorf("write sha256 of %s for plugin %s@%s failed: %w", entry.Arch,
-				entry.PluginName, entry.PluginVersion, err)
-		}
-		return nil
-
-	default:
-		return fmt.Errorf("unexpected hash result %q", result)
 	}
+
+	// 例如首个 arm64 副本第一次启动：补写本架构的 hash，其它架构的值保持不变。
+	updatedExt, err := withArchHash(rec.Extension, entry.Arch, entry.SHA256)
+	if err != nil {
+		return err
+	}
+	err = s.dataCli.Global.IaCPlugin.Update(kt, &dataplugin.IaCPluginUpdateReq{
+		ID:           rec.ID,
+		CurrentState: rec.State,
+		State:        rec.State,
+		Message:      cvt.ValToPtr(""),
+		Extension:    updatedExt,
+	})
+	if err != nil {
+		return fmt.Errorf("write sha256 of %s for plugin %s@%s failed: %w", entry.Arch,
+			entry.PluginName, entry.PluginVersion, err)
+	}
+	return nil
+}
+
+// withArchHash 返回在 extension 基础上补写（或设置）arch 对应 sha256 后的新 extension。
+// 其它架构已有的值与 extension 中的其它字段原样保留，不会被覆盖。
+func withArchHash(extension tabletypes.JsonField, arch, sha256 string) (tabletypes.JsonField, error) {
+	all := make(map[string]json.RawMessage)
+	if len(extension) != 0 {
+		if err := json.Unmarshal([]byte(extension), &all); err != nil {
+			return "", fmt.Errorf("invalid extension: %w", err)
+		}
+	}
+
+	archs := make(map[string]string)
+	if raw, ok := all["architectures"]; ok && len(raw) != 0 && string(raw) != "null" {
+		if err := json.Unmarshal(raw, &archs); err != nil {
+			return "", fmt.Errorf("invalid extension.architectures: %w", err)
+		}
+	}
+	archs[arch] = sha256
+
+	encoded, err := json.Marshal(archs)
+	if err != nil {
+		return "", err
+	}
+	all["architectures"] = encoded
+
+	out, err := json.Marshal(all)
+	if err != nil {
+		return "", err
+	}
+
+	return tabletypes.JsonField(out), nil
 }
 
 // syncSchemaAndUpdate 同步 Schema，并把记录从 init 收尾为 enabled / disabled / failed。
@@ -213,7 +336,7 @@ func (s *Service) syncSchemaAndUpdate(kt *kit.Kit, entry discovery.PluginEntry, 
 	}
 
 	target := iacplugin.CalcTargetState(records, entry.PluginVersion)
-	ext, err := WithArchHash(`{}`, entry.Arch, entry.SHA256)
+	ext, err := withArchHash(`{}`, entry.Arch, entry.SHA256)
 	if err != nil {
 		return err
 	}
@@ -233,8 +356,7 @@ func (s *Service) syncSchemaAndUpdate(kt *kit.Kit, entry discovery.PluginEntry, 
 	return nil
 }
 
-// syncSchema 拉起一次性进程并同步插件的 Schema。Sync 只通过 SchemaGetter 取 Schema，不感知插件是本地进程还是 http 后端；
-// 这里的一次性进程是我们拉起的，所以由我们负责关闭：无论成败，只要拉起成功就一定 Close，拉起失败时不调用 Sync。
+// syncSchema 拉起一次性进程并同步插件的 Schema，结束时无论成败均关闭进程。
 func (s *Service) syncSchema(kt *kit.Kit, entry discovery.PluginEntry) error {
 	manager := tfruntime.NewProcessManager(entry.PluginName, entry.ExecPath, nil, "", "")
 	defer func() {

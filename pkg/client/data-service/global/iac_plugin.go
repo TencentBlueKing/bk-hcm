@@ -28,6 +28,8 @@ import (
 	"hcm/pkg/client/common"
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
+	"hcm/pkg/dal/dao/tools"
+	"hcm/pkg/iacplugin"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
 	"hcm/pkg/runtime/filter"
@@ -89,6 +91,28 @@ func (c *IaCPluginClient) ListAll(kt *kit.Kit, expr *filter.Expression,
 		}
 		page.Start += uint32(page.Limit)
 	}
+}
+
+// GetLatest 按插件名查询满足条件的版本最高记录；无匹配记录时返回 nil, nil。
+// extraFilter 为可选的额外查询条件，非空时与 plugin_name = name 按 AND 合并。
+func (c *IaCPluginClient) GetLatest(kt *kit.Kit, pluginName string,
+	extraFilter *filter.Expression) (*coreplugin.IaCPlugin, error) {
+
+	expr := tools.EqualExpression("plugin_name", pluginName)
+	if extraFilter != nil {
+		var err error
+		expr, err = tools.And(expr, extraFilter)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	records, err := c.ListAll(kt, expr, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return iacplugin.Latest(records)
 }
 
 // CreateInit 插入一条 init 状态的插件记录并返回其记录 ID。

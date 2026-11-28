@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -42,7 +41,7 @@ func (d stubDiscover) Services() []cc.Name                             { return 
 func (d stubDiscover) ByLabels([]string) serviced.Discover             { return d }
 func (d stubDiscover) GetServiceAllNodeKeys(cc.Name) ([]string, error) { return nil, nil }
 
-func TestDecideSwitch(t *testing.T) {
+func TestSwitchPluginState(t *testing.T) {
 	const (
 		initS    = enumor.IaCPluginStateInit
 		enabled  = enumor.IaCPluginStateEnabled
@@ -52,6 +51,7 @@ func TestDecideSwitch(t *testing.T) {
 
 	rec := func(state enumor.IaCPluginState, msg string) *coreplugin.IaCPlugin {
 		return &coreplugin.IaCPlugin{
+			ID:            "plugin-1",
 			PluginName:    "tencentcloud",
 			PluginVersion: "1.83.34",
 			Protocol:      enumor.IaCPluginProtocolTFProvider,
@@ -65,24 +65,30 @@ func TestDecideSwitch(t *testing.T) {
 		current      *coreplugin.IaCPlugin
 		target       enumor.IaCPluginState
 		schemaExists bool
-		wantFrom     []enumor.IaCPluginState
+		wantUpdated  bool
 		wantErrSub   string
 	}{
-		{"enabled -> disabled", rec(enabled, ""), disabled, false, []enumor.IaCPluginState{enabled, failedS}, ""},
-		{"enabled -> enabled (idempotent)", rec(enabled, ""), enabled, false, nil, ""},
-		{"disabled -> disabled (idempotent)", rec(disabled, ""), disabled, false, nil, ""},
-		{"disabled -> enabled with schema", rec(disabled, ""), enabled, true, []enumor.IaCPluginState{disabled}, ""},
-		{"disabled -> enabled without schema", rec(disabled, ""), enabled, false, nil, "schema does not exist"},
-		{"failed -> disabled", rec(failedS, "schema sync failed"), disabled, false, []enumor.IaCPluginState{enabled, failedS}, ""},
-		{"failed -> enabled", rec(failedS, "schema sync failed"), enabled, true, nil, "schema sync failed"},
-		{"init -> disabled", rec(initS, ""), disabled, true, nil, "not finished"},
-		{"init -> enabled", rec(initS, ""), enabled, true, nil, "not finished"},
+		{"enabled -> disabled", rec(enabled, ""), disabled, false, true, ""},
+		{"enabled -> enabled (idempotent)", rec(enabled, ""), enabled, false, false, ""},
+		{"disabled -> disabled (idempotent)", rec(disabled, ""), disabled, false, false, ""},
+		{"disabled -> enabled with schema", rec(disabled, ""), enabled, true, true, ""},
+		{"disabled -> enabled without schema", rec(disabled, ""), enabled, false, false, "schema does not exist"},
+		{"failed -> disabled", rec(failedS, "schema sync failed"), disabled, false, true, ""},
+		{"failed -> enabled", rec(failedS, "schema sync failed"), enabled, true, false, "schema sync failed"},
+		{"init -> disabled", rec(initS, ""), disabled, true, false, "not finished"},
+		{"init -> enabled", rec(initS, ""), enabled, true, false, "not finished"},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
+			updated := false
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
+				if strings.HasSuffix(r.URL.Path, "/iac_plugins/update") {
+					updated = true
+					_ = json.NewEncoder(w).Encode(map[string]any{"code": 0})
+					return
+				}
 				details := []map[string]any{}
 				if c.schemaExists {
 					details = append(details, map[string]any{"id": "1"})
@@ -95,18 +101,21 @@ func TestDecideSwitch(t *testing.T) {
 			defer srv.Close()
 
 			s := &svc{client: client.NewClientSet(srv.Client(), stubDiscover{addr: srv.URL})}
-			gotFrom, err := s.decideSwitch(kit.New(), c.current, c.target)
+			err := s.switchPluginState(kit.New(), c.current, c.target)
 			if len(c.wantErrSub) > 0 {
 				if err == nil || !strings.Contains(err.Error(), c.wantErrSub) {
-					t.Fatalf("decideSwitch err = %v, want substring %q", err, c.wantErrSub)
+					t.Fatalf("switchPluginState err = %v, want substring %q", err, c.wantErrSub)
+				}
+				if updated {
+					t.Fatalf("switchPluginState updated = true on error")
 				}
 				return
 			}
 			if err != nil {
-				t.Fatalf("decideSwitch unexpected err: %v", err)
+				t.Fatalf("switchPluginState unexpected err: %v", err)
 			}
-			if !reflect.DeepEqual(gotFrom, c.wantFrom) {
-				t.Fatalf("decideSwitch = %v, want %v", gotFrom, c.wantFrom)
+			if updated != c.wantUpdated {
+				t.Fatalf("switchPluginState updated = %v, want %v", updated, c.wantUpdated)
 			}
 		})
 	}

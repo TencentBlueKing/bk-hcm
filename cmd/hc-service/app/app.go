@@ -60,8 +60,7 @@ func Run(opt *options.Option) error {
 	}
 
 	hs.svc.SetPluginReady()
-	hs.svc.StartPluginVersionWatch()
-	hs.svc.StartHTTPPluginCheck()
+	hs.svc.StartPluginTasks()
 
 	shutdown.RegisterFirstShutdown(hs.finalizer)
 	shutdown.WaitShutdown(20)

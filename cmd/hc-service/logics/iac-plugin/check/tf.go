@@ -17,16 +17,12 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package watch 运行期周期检查本地 tf 插件版本是否落后于注册表，持续落后时通知进程退出。
-package watch
+package check
 
 import (
-	"context"
 	"time"
 
 	"hcm/cmd/hc-service/logics/iac-plugin/tf-plugin/discovery"
-	"hcm/pkg/api/core"
-	coreplugin "hcm/pkg/api/core/plugin"
 	"hcm/pkg/client/data-service/global"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
@@ -35,45 +31,47 @@ import (
 	"hcm/pkg/logs"
 )
 
+var _ Checker = (*TFChecker)(nil)
+
 const (
-	// DefaultInterval 默认检查周期。
-	DefaultInterval = 60 * time.Second
-	// DefaultThreshold 连续多少个周期落后才退出。
+	// DefaultTFInterval 默认 tf 插件版本检查周期。
+	DefaultTFInterval = 60 * time.Second
+	// DefaultTFThreshold 连续多少个周期落后才退出。
 	// 取 3 而不是 1：新版本刚注册完成时，旧副本本来就在被替换的窗口里，不应立刻自杀。
-	DefaultThreshold = 3
+	DefaultTFThreshold = 3
 )
 
-// Options Watcher 的运行参数。
-type Options struct {
-	// Interval 检查周期，<=0 时取 DefaultInterval。
+// TFOptions tf 插件版本检查器的运行参数。
+type TFOptions struct {
+	// Interval 检查周期，<=0 时取 DefaultTFInterval。
 	Interval time.Duration
-	// Threshold 连续落后多少个周期后退出，<=0 时取 DefaultThreshold。
+	// Threshold 连续落后多少个周期后退出，<=0 时取 DefaultTFThreshold。
 	Threshold int
 }
 
-// Watcher 周期性检查本地 tf 插件版本是否落后。
-type Watcher struct {
+// TFChecker 周期性检查本地 tf 插件版本是否落后于注册表，持续落后时通知进程退出。
+type TFChecker struct {
 	cli      *global.IaCPluginClient
 	entries  map[string]discovery.PluginEntry
 	onBehind func()
-	opts     Options
+	opts     TFOptions
 
-	// counts 每个插件当前连续落后的周期数，只在 Run 的单个 goroutine 里访问。
+	// counts 每个插件当前连续落后的周期数
 	counts map[string]int
 }
 
-// New 创建 Watcher。entries 是启动时目录检查的结果（只读）；onBehind 用于通知退出。
-func New(cli *global.IaCPluginClient, entries map[string]discovery.PluginEntry,
-	onBehind func(), opts Options) *Watcher {
+// NewTFChecker 创建 tf 插件版本检查器。entries 是启动时目录扫描的结果（只读）；onBehind 用于通知退出。
+func NewTFChecker(cli *global.IaCPluginClient, entries map[string]discovery.PluginEntry,
+	onBehind func(), opts TFOptions) *TFChecker {
 
 	if opts.Interval <= 0 {
-		opts.Interval = DefaultInterval
+		opts.Interval = DefaultTFInterval
 	}
 	if opts.Threshold <= 0 {
-		opts.Threshold = DefaultThreshold
+		opts.Threshold = DefaultTFThreshold
 	}
 
-	return &Watcher{
+	return &TFChecker{
 		cli:      cli,
 		entries:  entries,
 		onBehind: onBehind,
@@ -82,39 +80,28 @@ func New(cli *global.IaCPluginClient, entries map[string]discovery.PluginEntry,
 	}
 }
 
-// Run 阻塞执行检查，直到 ctx 取消或已触发退出。没有任何本地插件时立即返回。
-func (w *Watcher) Run(ctx context.Context) {
-	if len(w.entries) == 0 {
-		return
-	}
-
-	ticker := time.NewTicker(w.opts.Interval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			if w.check(ctx) {
-				return
-			}
-		}
-	}
+// Name 返回检查器标识。
+func (c *TFChecker) Name() string {
+	return string(enumor.IaCPluginProtocolTFProvider)
 }
 
-// check 执行一轮检查，返回是否已触发退出。
-func (w *Watcher) check(ctx context.Context) bool {
-	// 后端任务使用后端操作 kit：data-service 会校验请求头里的操作人与 AppCode。
-	kt := core.NewBackendKit()
-	kt.Ctx = ctx
+// Interval 返回版本检查周期。
+func (c *TFChecker) Interval() time.Duration {
+	return c.opts.Interval
+}
 
-	for _, entry := range w.entries {
-		if ctx.Err() != nil {
+// Check 执行一轮检查，返回是否已触发退出。没有任何本地插件时直接返回 true 终止调度。
+func (c *TFChecker) Check(kt *kit.Kit) bool {
+	if len(c.entries) == 0 {
+		return true
+	}
+
+	for _, entry := range c.entries {
+		if kt.Ctx.Err() != nil {
 			return false
 		}
 
-		behind, registered, err := w.isPluginVersionBehind(kt, entry)
+		behind, registered, err := c.isPluginVersionBehind(kt, entry)
 		if err != nil {
 			// 读取或校验失败只跳过本轮，不计数：避免因 data-service 抖动误杀健康实例。
 			logs.Warnf("check plugin %s version behind failed, skip this round, err: %v, rid: %s",
@@ -123,19 +110,19 @@ func (w *Watcher) check(ctx context.Context) bool {
 		}
 
 		if !behind {
-			w.counts[entry.PluginName] = 0
+			c.counts[entry.PluginName] = 0
 			continue
 		}
 
-		w.counts[entry.PluginName]++
+		c.counts[entry.PluginName]++
 		logs.Warnf("check plugin %s version behind, local: %s, registered: %s, consecutive: %d/%d, rid: %s",
-			entry.PluginName, entry.PluginVersion, registered, w.counts[entry.PluginName], w.opts.Threshold, kt.Rid)
+			entry.PluginName, entry.PluginVersion, registered, c.counts[entry.PluginName], c.opts.Threshold, kt.Rid)
 
-		if w.counts[entry.PluginName] >= w.opts.Threshold {
+		if c.counts[entry.PluginName] >= c.opts.Threshold {
 			logs.Errorf("check plugin %s version stays behind, local: %s, registered: %s, exit, rid: %s",
 				entry.PluginName, entry.PluginVersion, registered, kt.Rid)
-			if w.onBehind != nil {
-				w.onBehind()
+			if c.onBehind != nil {
+				c.onBehind()
 			}
 			return true
 		}
@@ -146,22 +133,14 @@ func (w *Watcher) check(ctx context.Context) bool {
 
 // isPluginVersionBehind 查询注册表并判断本地版本是否落后于当前最高版本。
 // 仅当已完成记录（enabled / disabled）中的最高版本处于 enabled 且高于本地版本时返回 true。
-func (w *Watcher) isPluginVersionBehind(kt *kit.Kit,
+func (c *TFChecker) isPluginVersionBehind(kt *kit.Kit,
 	entry discovery.PluginEntry) (behind bool, registered string, err error) {
 
-	records, err := w.cli.ListAll(kt, tools.EqualExpression("plugin_name", entry.PluginName), nil)
-	if err != nil {
-		return false, "", err
-	}
-
-	filteredRecords := make([]coreplugin.IaCPlugin, 0, len(records))
-	for _, rec := range records {
-		if rec.State == enumor.IaCPluginStateEnabled || rec.State == enumor.IaCPluginStateDisabled {
-			filteredRecords = append(filteredRecords, rec)
-		}
-	}
-
-	highest, err := iacplugin.Latest(filteredRecords)
+	highest, err := c.cli.GetLatest(kt, entry.PluginName,
+		tools.ContainersExpression("state", []enumor.IaCPluginState{
+			enumor.IaCPluginStateEnabled,
+			enumor.IaCPluginStateDisabled,
+		}))
 	if err != nil {
 		return false, "", err
 	}

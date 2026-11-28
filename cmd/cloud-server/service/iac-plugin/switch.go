@@ -26,13 +26,10 @@ import (
 	"hcm/pkg/criteria/constant"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/criteria/errf"
-	"hcm/pkg/dal/dao/tools"
-	"hcm/pkg/iacplugin"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
-	"hcm/pkg/tools/slice"
 )
 
 // SwitchIaCPlugin 启用或停用 IaC 插件。
@@ -66,7 +63,7 @@ func (s *svc) SwitchIaCPlugin(cts *rest.Contexts) (interface{}, error) {
 	return nil, nil
 }
 
-// switchIaCPlugin 持插件名锁，按该插件名下版本最高的记录判定状态规则并更新相关版本状态。
+// switchIaCPlugin 持插件名锁，按该插件名下版本最高的记录校验状态规则并更新其状态。
 func (s *svc) switchIaCPlugin(kt *kit.Kit, pluginName string, targetState enumor.IaCPluginState) error {
 	leaseID, err := s.mutex.TryLockIaCPlugin(kt, pluginName, constant.IaCPluginSwitchLockLeaseSeconds)
 	if err != nil {
@@ -74,39 +71,29 @@ func (s *svc) switchIaCPlugin(kt *kit.Kit, pluginName string, targetState enumor
 	}
 	defer s.mutex.UnlockIaCPlugin(kt, pluginName, leaseID)
 
-	records, current, err := s.listAndGetLatestIaCPlugin(kt, pluginName)
+	current, err := s.getLatestIaCPlugin(kt, pluginName)
 	if err != nil {
 		return err
 	}
 
-	fromStates, err := s.decideSwitch(kt, current, targetState)
-	if err != nil || len(fromStates) == 0 {
-		return err
-	}
-
-	return s.updateIaCPluginsState(kt, records, fromStates, targetState)
+	return s.switchPluginState(kt, current, targetState)
 }
 
-// decideSwitch 按当前版本（最高版本）记录判定启停动作，返回需改为 to 的源状态列表；无需更新时返回 nil, nil。
-func (s *svc) decideSwitch(kt *kit.Kit, current *coreplugin.IaCPlugin,
-	to enumor.IaCPluginState) ([]enumor.IaCPluginState, error) {
+func (s *svc) switchPluginState(kt *kit.Kit, current *coreplugin.IaCPlugin,
+	targetState enumor.IaCPluginState) error {
 
-	if current.State == to {
+	if current.State == targetState {
 		logs.Warnf("iac plugin %s@%s is already in %s state, skip switch, rid: %s",
-			current.PluginName, current.PluginVersion, to, kt.Rid)
-		return nil, nil
+			current.PluginName, current.PluginVersion, targetState, kt.Rid)
+		return nil
 	}
 	if current.State == enumor.IaCPluginStateInit {
-		return nil, errf.Newf(errf.Aborted, "iac plugin %s@%s registration or upgrade is not finished",
+		return errf.Newf(errf.Aborted, "iac plugin %s@%s registration or upgrade is not finished",
 			current.PluginName, current.PluginVersion)
 	}
-
-	switch to {
-	case enumor.IaCPluginStateDisabled:
-		return []enumor.IaCPluginState{enumor.IaCPluginStateEnabled, enumor.IaCPluginStateFailed}, nil
-	case enumor.IaCPluginStateEnabled:
+	if targetState == enumor.IaCPluginStateEnabled {
 		if current.State == enumor.IaCPluginStateFailed {
-			return nil, errf.Newf(errf.Aborted, "iac plugin %s@%s is in failed state (%s), please recover first",
+			return errf.Newf(errf.Aborted, "iac plugin %s@%s is in failed state (%s), please recover first",
 				current.PluginName, current.PluginVersion, current.Message)
 		}
 		schemaExists, err := s.client.DataService().Global.IacPluginSchema.Exists(kt,
@@ -114,59 +101,37 @@ func (s *svc) decideSwitch(kt *kit.Kit, current *coreplugin.IaCPlugin,
 		if err != nil {
 			logs.Errorf("check iac plugin schema exists failed, err: %v, plugin_name: %s, plugin_version: %s, rid: %s",
 				err, current.PluginName, current.PluginVersion, kt.Rid)
-			return nil, err
-		}
-		if !schemaExists {
-			return nil, errf.Newf(errf.Aborted, "iac plugin %s@%s schema does not exist, please recover first",
-				current.PluginName, current.PluginVersion)
-		}
-		return []enumor.IaCPluginState{enumor.IaCPluginStateDisabled}, nil
-	default:
-		return nil, errf.Newf(errf.InvalidParameter, "unsupported switch target state: %s", to)
-	}
-}
-
-func (s *svc) listAndGetLatestIaCPlugin(kt *kit.Kit,
-	pluginName string) ([]coreplugin.IaCPlugin, *coreplugin.IaCPlugin, error) {
-
-	records, err := s.client.DataService().Global.IaCPlugin.ListAll(kt,
-		tools.EqualExpression("plugin_name", pluginName), nil)
-	if err != nil {
-		logs.Errorf("list iac plugin by name failed, err: %v, plugin_name: %s, rid: %s", err, pluginName, kt.Rid)
-		return nil, nil, err
-	}
-
-	current, err := iacplugin.Latest(records)
-	if err != nil {
-		logs.Errorf("select latest iac plugin version failed, err: %v, plugin_name: %s, rid: %s",
-			err, pluginName, kt.Rid)
-		return nil, nil, err
-	}
-	if current == nil {
-		return nil, nil, errf.Newf(errf.RecordNotFound, "iac plugin %s not found", pluginName)
-	}
-
-	return records, current, nil
-}
-
-func (s *svc) updateIaCPluginsState(kt *kit.Kit, records []coreplugin.IaCPlugin,
-	fromStates []enumor.IaCPluginState, toState enumor.IaCPluginState) error {
-
-	for _, rec := range records {
-		if !slice.IsItemInSlice(fromStates, rec.State) {
-			continue
-		}
-		err := s.client.DataService().Global.IaCPlugin.Update(kt, &dataplugin.IaCPluginUpdateReq{
-			ID:           rec.ID,
-			CurrentState: rec.State,
-			State:        toState,
-		})
-		if err != nil {
-			logs.Errorf("update iac plugin %s@%s state failed, err: %v, to_state: %s, rid: %s",
-				rec.PluginName, rec.PluginVersion, err, toState, kt.Rid)
 			return err
 		}
+		if !schemaExists {
+			return errf.Newf(errf.Aborted, "iac plugin %s@%s schema does not exist, please recover first",
+				current.PluginName, current.PluginVersion)
+		}
+	}
+
+	err := s.client.DataService().Global.IaCPlugin.Update(kt, &dataplugin.IaCPluginUpdateReq{
+		ID:           current.ID,
+		CurrentState: current.State,
+		State:        targetState,
+	})
+	if err != nil {
+		logs.Errorf("update iac plugin %s@%s state failed, err: %v, to_state: %s, rid: %s",
+			current.PluginName, current.PluginVersion, err, targetState, kt.Rid)
+		return err
 	}
 
 	return nil
+}
+
+func (s *svc) getLatestIaCPlugin(kt *kit.Kit, pluginName string) (*coreplugin.IaCPlugin, error) {
+	current, err := s.client.DataService().Global.IaCPlugin.GetLatest(kt, pluginName, nil)
+	if err != nil {
+		logs.Errorf("get latest iac plugin failed, err: %v, plugin_name: %s, rid: %s", err, pluginName, kt.Rid)
+		return nil, err
+	}
+	if current == nil {
+		return nil, errf.Newf(errf.RecordNotFound, "iac plugin %s not found", pluginName)
+	}
+
+	return current, nil
 }

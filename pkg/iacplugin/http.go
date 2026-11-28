@@ -36,7 +36,8 @@ const (
 	MinRSAKeyBits = cryptography.MinRSAPublicKeyBits
 )
 
-// ValidateAPIPath 校验 http 插件 api_path：允许为空（根路径），非空时必须是以 / 开头的纯路径，不能带协议、主机、参数或 ..。
+// ValidateAPIPath 校验 http 插件 api_path：允许为空（根路径），
+// 非空时必须是以 / 开头的纯路径，不能带协议、主机、参数或 ..。
 func ValidateAPIPath(apiPath string) error {
 	if apiPath == "" {
 		return nil

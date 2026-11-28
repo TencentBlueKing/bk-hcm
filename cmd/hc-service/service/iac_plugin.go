@@ -25,10 +25,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"hcm/cmd/hc-service/logics/iac-plugin/check"
 	httpplugin "hcm/cmd/hc-service/logics/iac-plugin/http-plugin"
 	"hcm/cmd/hc-service/logics/iac-plugin/tf-plugin/discovery"
 	"hcm/cmd/hc-service/logics/iac-plugin/tf-plugin/register"
-	"hcm/cmd/hc-service/logics/iac-plugin/tf-plugin/watch"
 	pluginschema "hcm/cmd/hc-service/logics/plugin/schema"
 	"hcm/pkg/api/core"
 	"hcm/pkg/cc"
@@ -49,10 +49,10 @@ type iacPluginManager struct {
 	tfRegister *register.Service
 	httpPlugin *httpplugin.Service
 
-	// stopVersionWatch 停止运行期 tf 插件版本监控，没有本地 tf 插件时为 nil。
-	stopVersionWatch context.CancelFunc
-	// stopHTTPCheck 停止 http 插件巡检，未启动时为 nil。
-	stopHTTPCheck context.CancelFunc
+	// checkers 运行期周期检查实现列表（tf 插件版本检查、http 插件巡检）。
+	checkers []check.Checker
+	// stopCheckers 停止所有运行期检查，未启动时为 nil。
+	stopCheckers context.CancelFunc
 }
 
 // initIaCPlugin 扫描本地 tf 插件目录，并初始化插件注册、Schema 同步与 http 插件。
@@ -87,15 +87,31 @@ func (s *Service) initIaCPlugin() error {
 	httpPlugin := httpplugin.New(dataCli, iacMutex, cvt.ValToPtr(cfg.HTTP.Gateway), schemaMgr, httpplugin.Options{
 		Enabled:          cfg.HTTP.Enabled,
 		LockLeaseSeconds: cfg.LockLeaseSeconds,
-		CheckInterval:    time.Duration(cfg.HTTP.CheckIntervalSeconds) * time.Second,
-		FailureThreshold: int(cfg.HTTP.CheckFailureThreshold),
 	})
+
+	checkers := make([]check.Checker, 0, 2)
+	if len(entries) > 0 {
+		checkers = append(checkers, check.NewTFChecker(dataCli.Global.IaCPlugin, entries,
+			shutdown.SignalShutdownGracefully, check.TFOptions{
+				Interval:  time.Duration(cfg.TF.VersionCheckIntervalSeconds) * time.Second,
+				Threshold: int(cfg.TF.VersionCheckThreshold),
+			}))
+	}
+	if cfg.HTTP.Enabled {
+		checkers = append(checkers, check.NewHTTPChecker(dataCli.Global.IaCPlugin, iacMutex, httpPlugin,
+			s.sd.IsMaster, check.HTTPOptions{
+				Interval:         time.Duration(cfg.HTTP.CheckIntervalSeconds) * time.Second,
+				FailureThreshold: int(cfg.HTTP.CheckFailureThreshold),
+				LockLeaseSeconds: cfg.LockLeaseSeconds,
+			}))
+	}
 
 	s.iacPlugin = &iacPluginManager{
 		plugins:    entries,
 		iacMutex:   iacMutex,
 		tfRegister: tfRegister,
 		httpPlugin: httpPlugin,
+		checkers:   checkers,
 	}
 	return nil
 }
@@ -121,44 +137,24 @@ func (s *Service) SetPluginReady() {
 	s.iacPlugin.ready.Store(true)
 }
 
-// StartPluginVersionWatch 启动运行期 tf 插件版本监控，本地版本持续落后于注册表已启用最高版本时触发优雅退出。
-func (s *Service) StartPluginVersionWatch() {
-	if len(s.iacPlugin.plugins) == 0 {
+// StartPluginTasks 启动所有插件运行期检查任务（tf 插件版本检查、http 插件巡检），随服务退出停止。
+func (s *Service) StartPluginTasks() {
+	if len(s.iacPlugin.checkers) == 0 {
 		return
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	s.iacPlugin.stopVersionWatch = cancel
+	s.iacPlugin.stopCheckers = cancel
 
-	cfg := cc.HCService().IaCPlugin.TF
-	w := watch.New(s.clientSet.DataService().Global.IaCPlugin, s.iacPlugin.plugins,
-		shutdown.SignalShutdownGracefully,
-		watch.Options{
-			Interval:  time.Duration(cfg.VersionCheckIntervalSeconds) * time.Second,
-			Threshold: int(cfg.VersionCheckThreshold),
-		})
-	go w.Run(ctx)
-}
-
-// StartHTTPPluginCheck 启动 http 插件巡检：仅 master 副本执行，随服务退出停止。未启用 http 插件时不启动。
-func (s *Service) StartHTTPPluginCheck() {
-	if !cc.HCService().IaCPlugin.HTTP.Enabled {
-		return
+	for _, c := range s.iacPlugin.checkers {
+		go check.Run(ctx, c)
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	s.iacPlugin.stopHTTPCheck = cancel
-
-	go s.iacPlugin.httpPlugin.RunCheck(ctx, s.sd.IsMaster)
 }
 
-// StopPluginTasks 停止运行期 tf 插件版本监控与 http 插件巡检。
+// StopPluginTasks 停止运行期插件检查任务并关闭插件锁客户端。
 func (s *Service) StopPluginTasks() {
-	if s.iacPlugin.stopVersionWatch != nil {
-		s.iacPlugin.stopVersionWatch()
-	}
-	if s.iacPlugin.stopHTTPCheck != nil {
-		s.iacPlugin.stopHTTPCheck()
+	if s.iacPlugin.stopCheckers != nil {
+		s.iacPlugin.stopCheckers()
 	}
 	if s.iacPlugin.iacMutex != nil {
 		s.iacPlugin.iacMutex.Close()

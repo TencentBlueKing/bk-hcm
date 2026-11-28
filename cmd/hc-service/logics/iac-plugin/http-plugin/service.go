@@ -17,7 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package httpplugin 实现 http 插件的注册、升级、修改与巡检，插件经蓝鲸 API 网关访问。
+// Package httpplugin 实现 http 插件的注册、升级与修改，插件经蓝鲸 API 网关访问。
 package httpplugin
 
 import (
@@ -25,7 +25,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"time"
 
 	pluginschema "hcm/cmd/hc-service/logics/plugin/schema"
 	coreplugin "hcm/pkg/api/core/plugin"
@@ -52,10 +51,6 @@ type Options struct {
 	Enabled bool
 	// LockLeaseSeconds 插件名锁租约（秒），需大于一次注册 / 升级的最长耗时。
 	LockLeaseSeconds int64
-	// CheckInterval 巡检间隔。
-	CheckInterval time.Duration
-	// FailureThreshold enabled 插件连续探活失败多少次后置为 failed。
-	FailureThreshold int
 }
 
 const pluginNamePlaceholder = "{plugin_name}"
@@ -130,7 +125,7 @@ func (s *Service) Register(kt *kit.Kit, req *proto.HTTPRegisterReq) (*proto.HTTP
 		}
 	}
 
-	version, err := s.probe(kt, req.PluginName, req.APIPath)
+	version, err := s.Probe(kt, req.PluginName, req.APIPath)
 	if err != nil {
 		return nil, err
 	}
@@ -235,16 +230,16 @@ func (s *Service) Upgrade(kt *kit.Kit, pluginName string) (*proto.HTTPPluginResu
 		return nil, err
 	}
 
-	version, err := s.probe(kt, latest.PluginName, ext.APIPath)
+	version, err := s.Probe(kt, latest.PluginName, ext.APIPath)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.upgradeTo(kt, records, latest, version)
+	return s.UpgradeTo(kt, records, latest, version)
 }
 
-// upgradeTo 比较探活版本与当前最高版本记录，执行新版本注册、失败恢复或跳过，调用方需已持插件名锁。
-func (s *Service) upgradeTo(kt *kit.Kit, records []coreplugin.IaCPlugin, latest *coreplugin.IaCPlugin,
+// UpgradeTo 比较探活版本与当前最高版本记录，执行新版本注册、失败恢复或跳过，调用方需已持插件名锁。
+func (s *Service) UpgradeTo(kt *kit.Kit, records []coreplugin.IaCPlugin, latest *coreplugin.IaCPlugin,
 	version string) (*proto.HTTPPluginResult, error) {
 
 	ext, err := parseExtension(latest)
@@ -389,7 +384,7 @@ func (s *Service) Update(kt *kit.Kit, req *proto.HTTPUpdateReq) (*proto.HTTPPlug
 func (s *Service) updateAPIPath(kt *kit.Kit, records []coreplugin.IaCPlugin, latest *coreplugin.IaCPlugin,
 	apiPath string, extRaw types.JsonField, reqMemo *string) (*proto.HTTPPluginResult, error) {
 
-	version, err := s.probe(kt, latest.PluginName, apiPath)
+	version, err := s.Probe(kt, latest.PluginName, apiPath)
 	if err != nil {
 		return nil, err
 	}
@@ -525,8 +520,8 @@ func (s *Service) syncSchema(kt *kit.Kit, pluginName, version, apiPath string) e
 	return nil
 }
 
-// probe 探活取版本，并校验版本号格式。
-func (s *Service) probe(kt *kit.Kit, pluginName, apiPath string) (string, error) {
+// Probe 探活取版本，并校验版本号格式。
+func (s *Service) Probe(kt *kit.Kit, pluginName, apiPath string) (string, error) {
 	if err := iacplugin.ValidateAPIPath(apiPath); err != nil {
 		return "", errf.NewFromErr(errf.InvalidParameter, err)
 	}

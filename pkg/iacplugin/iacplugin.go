@@ -84,12 +84,17 @@ func CompareVersion(a, b string) (int, error) {
 	return semver.Compare(va, vb), nil
 }
 
-// Latest 从同名插件的记录中选出版本最高的一条；plugins 为空返回 nil。
-// 记录里存在不合法版本号时返回错误，调用方不应在不确定的版本上继续。
-func Latest(plugins []coreplugin.IaCPlugin) (*coreplugin.IaCPlugin, error) {
+// Latest 从同名插件的记录中选出满足筛选条件的版本最高记录；无匹配记录时返回 nil。
+// match 为可选筛选函数，传入多个时需全部满足才参与比较；不传则比较全部记录。
+// 参与比较的记录里存在不合法版本号时返回错误，调用方不应在不确定的版本上继续。
+func Latest(plugins []coreplugin.IaCPlugin, match ...func(coreplugin.IaCPlugin) bool) (*coreplugin.IaCPlugin, error) {
 	var latest *coreplugin.IaCPlugin
 	var latestVersion string
 	for i := range plugins {
+		if !matchAll(plugins[i], match) {
+			continue
+		}
+
 		version, err := ParseVersion(plugins[i].PluginVersion)
 		if err != nil {
 			return nil, err
@@ -104,23 +109,25 @@ func Latest(plugins []coreplugin.IaCPlugin) (*coreplugin.IaCPlugin, error) {
 	return latest, nil
 }
 
-// CalcTargetState 计算 version 同步成功后的目标状态：存在更低的已完成版本（enabled / disabled）时沿用其最高版本的状态，否则返回 enabled。
-func CalcTargetState(records []coreplugin.IaCPlugin, version string) enumor.IaCPluginState {
-	lower := make([]coreplugin.IaCPlugin, 0, len(records))
-	for _, rec := range records {
-		if rec.State != enumor.IaCPluginStateEnabled && rec.State != enumor.IaCPluginStateDisabled {
-			continue
-		}
-		cmp, err := CompareVersion(rec.PluginVersion, version)
-		if err != nil {
-			continue
-		}
-		if cmp < 0 {
-			lower = append(lower, rec)
+func matchAll(rec coreplugin.IaCPlugin, filters []func(coreplugin.IaCPlugin) bool) bool {
+	for _, fn := range filters {
+		if fn != nil && !fn(rec) {
+			return false
 		}
 	}
+	return true
+}
 
-	previous, err := Latest(lower)
+// CalcTargetState 计算 version 同步成功后的目标状态：
+// 存在更低的已完成版本（enabled / disabled）时沿用其最高版本的状态，否则返回 enabled。
+func CalcTargetState(records []coreplugin.IaCPlugin, version string) enumor.IaCPluginState {
+	previous, err := Latest(records, func(rec coreplugin.IaCPlugin) bool {
+		if rec.State != enumor.IaCPluginStateEnabled && rec.State != enumor.IaCPluginStateDisabled {
+			return false
+		}
+		cmp, err := CompareVersion(rec.PluginVersion, version)
+		return err == nil && cmp < 0
+	})
 	if err == nil && previous != nil {
 		return previous.State
 	}
