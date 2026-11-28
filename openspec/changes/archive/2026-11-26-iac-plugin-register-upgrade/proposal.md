@@ -20,4 +20,4 @@ IaC 插件注册表（`iac_plugin`）与 Schema 存储（`iac_plugin_schema`）�
 - `cmd/hc-service`：插件扫描、注册、版本监控、HTTP 编排与巡检、启动就绪门控与内部路由。
 - `cmd/cloud-server`、`cmd/auth-server`、`pkg/iam/meta`：管理与 HTTP 转发接口、权限映射（`iac_plugin` → `global_configuration`）。
 - `pkg/iacplugin`、`pkg/lock`、`pkg/cc`、`pkg/api`、`pkg/client`：semver 版本比较与状态继承、路径/公钥校验、etcd 插件锁、配置与协议定义。
-- `docs/api-docs/web-server/docs/scr/`、`docs/support-file/`：接口文档与部署配置。
+- `docs/api-docs/web-server/docs/resource/iac-plugin/`、`docs/support-file/`：接口文档与部署配置。

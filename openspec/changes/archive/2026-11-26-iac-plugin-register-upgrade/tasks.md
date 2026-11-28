@@ -15,7 +15,7 @@
 
 - [x] `cmd/hc-service/logics/iac-plugin/http-plugin`、`service/iac-plugin`：探活、注册、升级、修改、master 巡检及内部路由
 - [x] `cmd/cloud-server/service/iac-plugin`、`pkg/api`、`pkg/client`：列表、启停与 HTTP 注册/升级/修改转发接口
-- [x] `docs/api-docs/web-server/docs/scr/`：补齐 5 篇接口文档
+- [x] `docs/api-docs/web-server/docs/resource/iac-plugin/`：补齐 5 篇接口文档
 
 ## 4. 验证
 
