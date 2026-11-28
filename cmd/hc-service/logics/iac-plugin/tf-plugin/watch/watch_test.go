@@ -27,6 +27,7 @@ import (
 	"testing"
 
 	"hcm/cmd/hc-service/logics/iac-plugin/tf-plugin/discovery"
+	"hcm/pkg/api/core"
 	coreplugin "hcm/pkg/api/core/plugin"
 	dataplugin "hcm/pkg/api/data-service/plugin"
 	"hcm/pkg/cc"
@@ -73,8 +74,10 @@ func TestIsPluginVersionBehind(t *testing.T) {
 		{"same version", "1.0.0", []coreplugin.IaCPlugin{rec("1.0.0", enabled)}, false, "1.0.0"},
 		{"local newer, own registration still running", "1.2.0",
 			[]coreplugin.IaCPlugin{rec("1.0.0", enabled)}, false, "1.0.0"},
-		{"a disabled higher version counts as completed", "1.0.0",
-			[]coreplugin.IaCPlugin{rec("1.0.0", enabled), rec("1.1.0", disabled)}, true, "1.1.0"},
+		{"a disabled higher version does not trigger exit", "1.0.0",
+			[]coreplugin.IaCPlugin{rec("1.0.0", enabled), rec("1.1.0", disabled)}, false, ""},
+		{"disabled highest does not fall back to older enabled version", "1.0.0",
+			[]coreplugin.IaCPlugin{rec("1.0.0", enabled), rec("1.1.0", enabled), rec("1.2.0", disabled)}, false, ""},
 		// 升级失败时旧副本仍是唯一可用版本，不能判成落后。
 		{"a higher failed version does not count", "1.0.0",
 			[]coreplugin.IaCPlugin{rec("1.0.0", enabled), rec("1.1.0", failedS)}, false, "1.0.0"},
@@ -87,8 +90,29 @@ func TestIsPluginVersionBehind(t *testing.T) {
 			[]coreplugin.IaCPlugin{rec("1.9.0", enabled)}, false, "1.9.0"},
 	}
 
+	var currentRecords []coreplugin.IaCPlugin
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"code": errf.OK,
+			"data": &dataplugin.IaCPluginListResult{Details: currentRecords},
+		})
+	}))
+	defer srv.Close()
+
+	cli := global.NewIaCPluginClient(rest.NewClient(&restcli.Capability{
+		Client:   srv.Client(),
+		Discover: fakeDiscover{host: srv.URL},
+	}, "/"))
+	watcher := New(cli, nil, nil, Options{})
+	kt := core.NewBackendKit()
+
 	for _, c := range cases {
-		behind, ver, err := isPluginVersionBehind(c.records, c.local)
+		currentRecords = c.records
+		behind, ver, err := watcher.isPluginVersionBehind(kt, discovery.PluginEntry{
+			PluginName:    "tc",
+			PluginVersion: c.local,
+		})
 		if err != nil {
 			t.Errorf("%s: unexpected err: %v", c.name, err)
 			continue
@@ -98,7 +122,11 @@ func TestIsPluginVersionBehind(t *testing.T) {
 		}
 	}
 
-	if _, _, err := isPluginVersionBehind([]coreplugin.IaCPlugin{rec("not-a-version", enabled)}, "1.0.0"); err == nil {
+	currentRecords = []coreplugin.IaCPlugin{rec("not-a-version", enabled)}
+	if _, _, err := watcher.isPluginVersionBehind(kt, discovery.PluginEntry{
+		PluginName:    "tc",
+		PluginVersion: "1.0.0",
+	}); err == nil {
 		t.Error("an unparsable recorded version must be an error")
 	}
 }
@@ -150,7 +178,7 @@ func TestWatcherCheck(t *testing.T) {
 	}, "/"))
 
 	called := 0
-	w := New(cli, map[string]discovery.Entry{"tc": {PluginName: "tc", PluginVersion: "1.0.0"}},
+	w := New(cli, map[string]discovery.PluginEntry{"tc": {PluginName: "tc", PluginVersion: "1.0.0"}},
 		func() { called++ }, Options{})
 
 	for i := 0; i < len(rounds)-1; i++ {

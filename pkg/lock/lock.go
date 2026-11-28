@@ -32,11 +32,6 @@ import (
 // ErrLockFailed lock grabbing failed err
 var ErrLockFailed = errors.New("lock grabbing failed")
 
-// IaCPluginKey 返回 IaC 插件注册、升级、启停共用的锁 key。
-func IaCPluginKey(pluginName string) string {
-	return fmt.Sprintf("/hcm/lock/iac_plugin/%s", pluginName)
-}
-
 // New create an etcd mutex, ttl is the default lease ttl in seconds.
 func New(cfg etcd3.Config, ttl int64) (*EtcdMutex, error) {
 	client, err := etcd3.New(cfg)

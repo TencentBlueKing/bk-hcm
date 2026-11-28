@@ -22,13 +22,11 @@ package httpplugin
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
 
-	"hcm/cmd/hc-service/logics/iac-plugin/store"
 	pluginschema "hcm/cmd/hc-service/logics/plugin/schema"
 	coreplugin "hcm/pkg/api/core/plugin"
 	dataplugin "hcm/pkg/api/data-service/plugin"
@@ -46,8 +44,6 @@ import (
 	"hcm/pkg/metrics"
 	"hcm/pkg/thirdparty/api-gateway/plugin"
 	cvt "hcm/pkg/tools/converter"
-
-	etcd3 "go.etcd.io/etcd/client/v3"
 )
 
 // Options http 插件流程参数。
@@ -74,15 +70,9 @@ func (k pluginClientInfo) baseURL(endpoint string) string {
 	return strings.TrimRight(prefix, "/") + k.apiPath
 }
 
-type schemaGetterFunc func(kt *kit.Kit) (*coreplugin.PluginSchema, error)
-
-func (f schemaGetterFunc) GetSchema(kt *kit.Kit) (*coreplugin.PluginSchema, error) {
-	return f(kt)
-}
-
 // Service 实现 http 插件的注册、升级、修改与巡检。
 //
-// 注册 / 升级 / 修改 / 巡检与 P3 的启停共用插件名锁 lock.IaCPluginKey；接口拿不到锁立即返回，巡检跳过本轮。
+// 注册、升级、修改、巡检与启停共用插件名锁 lock.IaCPluginKey；接口拿不到锁立即返回，巡检跳过本轮。
 // 状态推进一律走 current_state 条件更新，审计由 data-service 在同一事务内写入，操作人取自 kit。
 type Service struct {
 	dataCli      *dataservice.Client
@@ -123,13 +113,13 @@ func (s *Service) getPluginClient(pluginName, apiPath string) (plugin.Client, er
 // Register 注册 http 插件：持锁 → 插件名未被 tf 占用 → 探活取版本 → 按版本最高记录处理 → 同步 Schema → 收尾。
 // 请求参数（地址、加密配置）在进入前已校验，校验或探活失败时不写注册表。
 func (s *Service) Register(kt *kit.Kit, req *proto.HTTPRegisterReq) (*proto.HTTPPluginResult, error) {
-	leaseID, err := s.tryLock(kt, req.PluginName)
+	leaseID, err := s.mutex.TryLockIaCPlugin(kt, req.PluginName, s.opts.LockLeaseSeconds)
 	if err != nil {
 		return nil, err
 	}
-	defer s.unlock(kt, req.PluginName, leaseID)
+	defer s.mutex.UnlockIaCPlugin(kt, req.PluginName, leaseID)
 
-	records, err := store.List(kt, s.dataCli, tools.EqualExpression("plugin_name", req.PluginName))
+	records, err := s.dataCli.Global.IaCPlugin.ListAll(kt, tools.EqualExpression("plugin_name", req.PluginName), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +153,10 @@ func (s *Service) Register(kt *kit.Kit, req *proto.HTTPRegisterReq) (*proto.HTTP
 
 	state, err := s.syncSchemaAndUpdate(kt, id, req.PluginName, version, req.APIPath, records)
 	if err != nil {
-		if derr := store.Delete(kt, s.dataCli, tools.EqualExpression("id", id)); derr != nil {
+		derr := s.dataCli.Global.IaCPlugin.BatchDelete(kt, &dataplugin.IaCPluginBatchDeleteReq{
+			Filter: tools.EqualExpression("id", id),
+		})
+		if derr != nil {
 			logs.Errorf("delete iac plugin %s@%s failed, err: %v, cause: %v, rid: %s", req.PluginName, version,
 				derr, err, kt.Rid)
 		}
@@ -187,7 +180,7 @@ func (s *Service) prepareRegisterRecord(kt *kit.Kit, req *proto.HTTPRegisterReq,
 		Memo:          req.Memo,
 	}
 	if latest == nil {
-		return store.Insert(kt, s.dataCli, createReq)
+		return s.dataCli.Global.IaCPlugin.CreateInit(kt, createReq)
 	}
 	if latest.State == enumor.IaCPluginStateEnabled || latest.State == enumor.IaCPluginStateDisabled {
 		return "", errf.Newf(errf.Aborted, "iac plugin %s is already registered, current version: %s, "+
@@ -203,9 +196,16 @@ func (s *Service) prepareRegisterRecord(kt *kit.Kit, req *proto.HTTPRegisterReq,
 		return "", errf.Newf(errf.Aborted, "iac plugin %s probed version %s is lower than the "+
 			"current version %s, rollback is not supported yet", req.PluginName, version, latest.PluginVersion)
 	case cmp > 0:
-		return store.Insert(kt, s.dataCli, createReq)
+		return s.dataCli.Global.IaCPlugin.CreateInit(kt, createReq)
 	default:
-		err = store.Update(kt, s.dataCli, latest.ID, latest.State, enumor.IaCPluginStateInit, ext, req.Memo)
+		err = s.dataCli.Global.IaCPlugin.Update(kt, &dataplugin.IaCPluginUpdateReq{
+			ID:           latest.ID,
+			CurrentState: latest.State,
+			State:        enumor.IaCPluginStateInit,
+			Message:      cvt.ValToPtr(""),
+			Extension:    ext,
+			Memo:         req.Memo,
+		})
 		if err != nil {
 			return "", err
 		}
@@ -215,11 +215,11 @@ func (s *Service) prepareRegisterRecord(kt *kit.Kit, req *proto.HTTPRegisterReq,
 
 // Upgrade 管理员在插件方发版后触发升级检查，或在插件 failed 时触发恢复。按插件名作用于版本最高的记录。
 func (s *Service) Upgrade(kt *kit.Kit, pluginName string) (*proto.HTTPPluginResult, error) {
-	leaseID, err := s.tryLock(kt, pluginName)
+	leaseID, err := s.mutex.TryLockIaCPlugin(kt, pluginName, s.opts.LockLeaseSeconds)
 	if err != nil {
 		return nil, err
 	}
-	defer s.unlock(kt, pluginName, leaseID)
+	defer s.mutex.UnlockIaCPlugin(kt, pluginName, leaseID)
 
 	records, latest, err := s.listAndGetLatest(kt, pluginName)
 	if err != nil {
@@ -243,11 +243,7 @@ func (s *Service) Upgrade(kt *kit.Kit, pluginName string) (*proto.HTTPPluginResu
 	return s.upgradeTo(kt, records, latest, version)
 }
 
-// upgradeTo 按探活版本 V 与版本最高记录 L 判定升级，调用方必须已持插件名锁。巡检复用。
-//   - V 高于 L：插入 V 的 init 记录（extension、memo 沿用 L）并同步，L 保持原状；
-//   - V 等于 L 且 L 为 init / failed：L 重入并同步；
-//   - V 等于 L 且 L 为 enabled / disabled：无需处理（disabled 且 Schema 缺失时重做同步，仍为 disabled）；
-//   - V 低于 L：暂不支持回滚。
+// upgradeTo 比较探活版本与当前最高版本记录，执行新版本注册、失败恢复或跳过，调用方需已持插件名锁。
 func (s *Service) upgradeTo(kt *kit.Kit, records []coreplugin.IaCPlugin, latest *coreplugin.IaCPlugin,
 	version string) (*proto.HTTPPluginResult, error) {
 
@@ -274,7 +270,7 @@ func (s *Service) upgradeTo(kt *kit.Kit, records []coreplugin.IaCPlugin, latest 
 	}
 	// 探活返回了更高版本
 	if cmp > 0 {
-		id, err := store.Insert(kt, s.dataCli, &dataplugin.IaCPluginCreateReq{
+		id, err := s.dataCli.Global.IaCPlugin.CreateInit(kt, &dataplugin.IaCPluginCreateReq{
 			PluginName:    latest.PluginName,
 			PluginVersion: version,
 			Protocol:      enumor.IaCPluginProtocolHTTP,
@@ -297,7 +293,12 @@ func (s *Service) upgradeTo(kt *kit.Kit, records []coreplugin.IaCPlugin, latest 
 	// 探活返回了相同版本
 	switch latest.State {
 	case enumor.IaCPluginStateInit, enumor.IaCPluginStateFailed:
-		err = store.Update(kt, s.dataCli, latest.ID, latest.State, enumor.IaCPluginStateInit, "", nil)
+		err = s.dataCli.Global.IaCPlugin.Update(kt, &dataplugin.IaCPluginUpdateReq{
+			ID:           latest.ID,
+			CurrentState: latest.State,
+			State:        enumor.IaCPluginStateInit,
+			Message:      cvt.ValToPtr(""),
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -309,7 +310,7 @@ func (s *Service) upgradeTo(kt *kit.Kit, records []coreplugin.IaCPlugin, latest 
 
 	case enumor.IaCPluginStateDisabled:
 		// 停用插件的 Schema 可能缺失，需要同步。
-		exists, err := store.SchemaExists(kt, s.dataCli, latest.PluginName, latest.PluginVersion)
+		exists, err := s.dataCli.Global.IacPluginSchema.Exists(kt, latest.PluginName, latest.PluginVersion)
 		if err != nil {
 			logs.Errorf("list iac plugin schema failed, err: %v, plugin_name: %s, plugin_version: %s, rid: %s",
 				err, latest.PluginName, latest.PluginVersion, kt.Rid)
@@ -329,11 +330,11 @@ func (s *Service) upgradeTo(kt *kit.Kit, records []coreplugin.IaCPlugin, latest 
 //   - 只改加密配置 / 备注：校验后直接条件更新，不改状态、不同步；
 //   - 改 api_path：探活新地址，版本更高走升级（新记录用新地址），相同则重新同步成功后再更新，更低拒绝。
 func (s *Service) Update(kt *kit.Kit, req *proto.HTTPUpdateReq) (*proto.HTTPPluginResult, error) {
-	leaseID, err := s.tryLock(kt, req.PluginName)
+	leaseID, err := s.mutex.TryLockIaCPlugin(kt, req.PluginName, s.opts.LockLeaseSeconds)
 	if err != nil {
 		return nil, err
 	}
-	defer s.unlock(kt, req.PluginName, leaseID)
+	defer s.mutex.UnlockIaCPlugin(kt, req.PluginName, leaseID)
 
 	records, latest, err := s.listAndGetLatest(kt, req.PluginName)
 	if err != nil {
@@ -366,8 +367,15 @@ func (s *Service) Update(kt *kit.Kit, req *proto.HTTPUpdateReq) (*proto.HTTPPlug
 
 	// api_path 未变更：无需探活和同步 Schema，直接更新 extension 与 memo。
 	if newExt.APIPath == curExt.APIPath {
-		if err = store.Update(kt, s.dataCli, latest.ID, latest.State, latest.State, newExtRaw,
-			req.Memo); err != nil {
+		err = s.dataCli.Global.IaCPlugin.Update(kt, &dataplugin.IaCPluginUpdateReq{
+			ID:           latest.ID,
+			CurrentState: latest.State,
+			State:        latest.State,
+			Message:      cvt.ValToPtr(""),
+			Extension:    newExtRaw,
+			Memo:         req.Memo,
+		})
+		if err != nil {
 			return nil, err
 		}
 		return &proto.HTTPPluginResult{ID: latest.ID, PluginName: latest.PluginName,
@@ -401,8 +409,15 @@ func (s *Service) updateAPIPath(kt *kit.Kit, records []coreplugin.IaCPlugin, lat
 		if err = s.syncSchema(kt, latest.PluginName, version, apiPath); err != nil {
 			return nil, err
 		}
-		if err = store.Update(kt, s.dataCli, latest.ID, latest.State, latest.State, extRaw,
-			reqMemo); err != nil {
+		err = s.dataCli.Global.IaCPlugin.Update(kt, &dataplugin.IaCPluginUpdateReq{
+			ID:           latest.ID,
+			CurrentState: latest.State,
+			State:        latest.State,
+			Message:      cvt.ValToPtr(""),
+			Extension:    extRaw,
+			Memo:         reqMemo,
+		})
+		if err != nil {
 			return nil, err
 		}
 		return &proto.HTTPPluginResult{ID: latest.ID, PluginName: latest.PluginName,
@@ -414,7 +429,7 @@ func (s *Service) updateAPIPath(kt *kit.Kit, records []coreplugin.IaCPlugin, lat
 	if reqMemo != nil {
 		memo = reqMemo
 	}
-	newID, err := store.Insert(kt, s.dataCli, &dataplugin.IaCPluginCreateReq{
+	newID, err := s.dataCli.Global.IaCPlugin.CreateInit(kt, &dataplugin.IaCPluginCreateReq{
 		PluginName:    latest.PluginName,
 		PluginVersion: version,
 		Protocol:      enumor.IaCPluginProtocolHTTP,
@@ -463,15 +478,20 @@ func (s *Service) syncSchemaAndUpdate(kt *kit.Kit, id, pluginName, version, apiP
 
 	if err := s.syncSchema(kt, pluginName, version, apiPath); err != nil {
 		// 写不进 failed 时记录保持 init，下次注册 / 升级 / 巡检照样会重入。
-		if merr := store.MarkFailed(kt, s.dataCli, id, enumor.IaCPluginStateInit, err); merr != nil {
+		if merr := s.dataCli.Global.IaCPlugin.MarkFailed(kt, id, enumor.IaCPluginStateInit, err); merr != nil {
 			logs.Errorf("mark iac plugin %s@%s as failed failed, err: %v, cause: %v, rid: %s", pluginName, version,
 				merr, err, kt.Rid)
 		}
 		return "", err
 	}
 
-	state := iacplugin.InheritState(records, version)
-	err := store.Update(kt, s.dataCli, id, enumor.IaCPluginStateInit, state, "", nil)
+	state := iacplugin.CalcTargetState(records, version)
+	err := s.dataCli.Global.IaCPlugin.Update(kt, &dataplugin.IaCPluginUpdateReq{
+		ID:           id,
+		CurrentState: enumor.IaCPluginStateInit,
+		State:        state,
+		Message:      cvt.ValToPtr(""),
+	})
 	if err != nil {
 		logs.Errorf("mark iac plugin %s@%s as %s failed, err: %v, rid: %s", pluginName, version, state, err, kt.Rid)
 		return "", err
@@ -483,7 +503,12 @@ func (s *Service) syncSchemaAndUpdate(kt *kit.Kit, id, pluginName, version, apiP
 
 // syncSchema 经网关从插件取 Schema 并交给 SchemaManager 校验落库。
 func (s *Service) syncSchema(kt *kit.Kit, pluginName, version, apiPath string) error {
-	result, err := s.schemaMgr.SyncSchema(kt, s.schemaGetter(pluginName, apiPath))
+	cli, err := s.getPluginClient(pluginName, apiPath)
+	if err != nil {
+		return err
+	}
+
+	result, err := s.schemaMgr.SyncSchema(kt, cli)
 	if err != nil {
 		logs.Errorf("sync iac plugin %s@%s schema failed, err: %v, rid: %s", pluginName, version, err, kt.Rid)
 		return errf.Newf(errf.Aborted, "sync iac plugin %s@%s schema failed, err: %v", pluginName, version, err)
@@ -498,22 +523,6 @@ func (s *Service) syncSchema(kt *kit.Kit, pluginName, version, apiPath string) e
 	}
 
 	return nil
-}
-
-// schemaGetter 返回按 pluginName 与 apiPath 取 Schema 的方法。
-func (s *Service) schemaGetter(pluginName, apiPath string) pluginschema.SchemaGetter {
-	return schemaGetterFunc(func(kt *kit.Kit) (*coreplugin.PluginSchema, error) {
-		cli, err := s.getPluginClient(pluginName, apiPath)
-		if err != nil {
-			return nil, err
-		}
-
-		schema, err := cli.GetSchema(kt)
-		if err != nil {
-			return nil, errf.Newf(errf.Aborted, "get http plugin schema failed, err: %v", err)
-		}
-		return schema, nil
-	})
 }
 
 // probe 探活取版本，并校验版本号格式。
@@ -542,8 +551,9 @@ func (s *Service) probe(kt *kit.Kit, pluginName, apiPath string) (string, error)
 	return health.PluginVersion, nil
 }
 
-func (s *Service) listAndGetLatest(kt *kit.Kit, pluginName string) ([]coreplugin.IaCPlugin, *coreplugin.IaCPlugin, error) {
-	records, err := store.List(kt, s.dataCli, tools.EqualExpression("plugin_name", pluginName))
+func (s *Service) listAndGetLatest(kt *kit.Kit,
+	pluginName string) ([]coreplugin.IaCPlugin, *coreplugin.IaCPlugin, error) {
+	records, err := s.dataCli.Global.IaCPlugin.ListAll(kt, tools.EqualExpression("plugin_name", pluginName), nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -557,30 +567,6 @@ func (s *Service) listAndGetLatest(kt *kit.Kit, pluginName string) ([]coreplugin
 	}
 
 	return records, latest, nil
-}
-
-func (s *Service) tryLock(kt *kit.Kit, pluginName string) (etcd3.LeaseID, error) {
-	leaseID, err := s.mutex.TryLockWithTTL(lock.IaCPluginKey(pluginName), s.opts.LockLeaseSeconds)
-	if err != nil {
-		if errors.Is(err, lock.ErrLockFailed) {
-			return 0, errf.Newf(errf.Aborted,
-				"iac plugin %s is being registered, upgraded or modified, please retry later", pluginName)
-		}
-		logs.Errorf("try lock iac plugin %s failed, err: %v, rid: %s", pluginName, err, kt.Rid)
-		return 0, err
-	}
-
-	return leaseID, nil
-}
-
-func (s *Service) unlock(kt *kit.Kit, pluginName string, leaseID etcd3.LeaseID) {
-	if err := s.mutex.UnLock(leaseID); err != nil {
-		// 租约已过期：锁已自动释放。
-		if strings.Contains(err.Error(), "requested lease not found") {
-			return
-		}
-		logs.Errorf("unlock iac plugin %s failed, err: %v, lease_id: %d, rid: %s", pluginName, err, leaseID, kt.Rid)
-	}
 }
 
 func parseExtension(rec *coreplugin.IaCPlugin) (*coreplugin.HTTPExtension, error) {

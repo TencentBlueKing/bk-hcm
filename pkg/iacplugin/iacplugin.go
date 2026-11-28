@@ -104,12 +104,13 @@ func Latest(plugins []coreplugin.IaCPlugin) (*coreplugin.IaCPlugin, error) {
 	return latest, nil
 }
 
-// InheritState 计算 version 同步成功后应取的状态：上一版本（版本低于 version 的记录中最高的一条）为 disabled
-// 则继承 disabled，否则为 enabled；没有上一版本（首次注册）时为 enabled。tf_provider 与 http 插件共用。
-// 版本号不合法的记录不参与比较：调用方在判定阶段已校验过版本号，这里保守按不继承处理。
-func InheritState(records []coreplugin.IaCPlugin, version string) enumor.IaCPluginState {
+// CalcTargetState 计算 version 同步成功后的目标状态：存在更低的已完成版本（enabled / disabled）时沿用其最高版本的状态，否则返回 enabled。
+func CalcTargetState(records []coreplugin.IaCPlugin, version string) enumor.IaCPluginState {
 	lower := make([]coreplugin.IaCPlugin, 0, len(records))
 	for _, rec := range records {
+		if rec.State != enumor.IaCPluginStateEnabled && rec.State != enumor.IaCPluginStateDisabled {
+			continue
+		}
 		cmp, err := CompareVersion(rec.PluginVersion, version)
 		if err != nil {
 			continue
@@ -120,8 +121,8 @@ func InheritState(records []coreplugin.IaCPlugin, version string) enumor.IaCPlug
 	}
 
 	previous, err := Latest(lower)
-	if err == nil && previous != nil && previous.State == enumor.IaCPluginStateDisabled {
-		return enumor.IaCPluginStateDisabled
+	if err == nil && previous != nil {
+		return previous.State
 	}
 
 	return enumor.IaCPluginStateEnabled

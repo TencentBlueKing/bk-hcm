@@ -50,7 +50,7 @@ type Client struct {
 func NewClient(c *client.Capability, version string) *Client {
 	prefixPath := fmt.Sprintf("/api/%s/hc/vendors", version)
 	return &Client{
-		IaCPlugin: iacplugin.NewClient(rest.NewClient(c, fmt.Sprintf("/api/%s/hc", version))),
+		IaCPlugin: iacplugin.NewClient(rest.NewClient(c, fmt.Sprintf("/api/%s/hc/iac_plugins", version))),
 		// Note: 对于Global Client，主要是用于无vendor区分即全局或跨多个云的请求，HC服务应该没有全局的API
 		TCloud: tcloud.NewClient(
 			rest.NewClient(c, fmt.Sprintf("%s/%s", prefixPath, enumor.TCloud)),

@@ -105,7 +105,7 @@ func TestLatest(t *testing.T) {
 	}
 }
 
-func TestInheritState(t *testing.T) {
+func TestCalcTargetState(t *testing.T) {
 	rec := func(version string, state enumor.IaCPluginState) coreplugin.IaCPlugin {
 		return coreplugin.IaCPlugin{PluginName: "p", PluginVersion: version, State: state}
 	}
@@ -127,9 +127,18 @@ func TestInheritState(t *testing.T) {
 			version: "1.1.0", want: enabled},
 		{name: "继承停用", records: []coreplugin.IaCPlugin{rec("1.0.0", disabled), rec("1.1.0", initS)},
 			version: "1.1.0", want: disabled},
-		{name: "上一版本失败按启用", records: []coreplugin.IaCPlugin{rec("1.0.0", failedS), rec("1.1.0", initS)},
+		{name: "仅存在失败版本按启用", records: []coreplugin.IaCPlugin{rec("1.0.0", failedS), rec("1.1.0", initS)},
 			version: "1.1.0", want: enabled},
-		{name: "只看紧邻的上一版本",
+		{name: "中间版本失败不覆盖停用状态",
+			records: []coreplugin.IaCPlugin{rec("1.0.0", disabled), rec("1.1.0", failedS), rec("1.2.0", initS)},
+			version: "1.2.0", want: disabled},
+		{name: "中间版本中断不覆盖停用状态",
+			records: []coreplugin.IaCPlugin{rec("1.0.0", disabled), rec("1.1.0", initS), rec("1.2.0", initS)},
+			version: "1.2.0", want: disabled},
+		{name: "中间版本失败不覆盖启用状态",
+			records: []coreplugin.IaCPlugin{rec("1.0.0", enabled), rec("1.1.0", failedS), rec("1.2.0", initS)},
+			version: "1.2.0", want: enabled},
+		{name: "只看紧邻的上一完成版本",
 			records: []coreplugin.IaCPlugin{rec("1.0.0", enabled), rec("1.1.0", disabled), rec("1.2.0", initS)},
 			version: "1.2.0", want: disabled},
 		{name: "更高版本不参与",
@@ -141,7 +150,7 @@ func TestInheritState(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		if got := InheritState(c.records, c.version); got != c.want {
+		if got := CalcTargetState(c.records, c.version); got != c.want {
 			t.Errorf("%s: got %s, want %s", c.name, got, c.want)
 		}
 	}

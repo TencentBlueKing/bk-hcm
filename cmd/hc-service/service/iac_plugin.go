@@ -40,8 +40,8 @@ import (
 
 // iacPluginManager 汇总 IaC 插件在 hc-service 内的组件与运行期生命周期。
 type iacPluginManager struct {
-	// plugins 启动时扫描到的本副本 tf 插件（以插件名为 key），之后只读。
-	plugins map[string]discovery.Entry
+	// plugins 启动时从本地目录扫描到的 tf 插件（以插件名为 key），之后只读。
+	plugins map[string]discovery.PluginEntry
 	// ready 为 true 表示 IaC 插件已注册完成，可以接收流量；在此之前 /healthz 返回 503，/alivez 不受影响。
 	ready atomic.Bool
 
@@ -49,7 +49,7 @@ type iacPluginManager struct {
 	tfRegister *register.Service
 	httpPlugin *httpplugin.Service
 
-	// stopVersionWatch 停止运行期插件版本检查，没有本地 tf 插件时为 nil。
+	// stopVersionWatch 停止运行期 tf 插件版本监控，没有本地 tf 插件时为 nil。
 	stopVersionWatch context.CancelFunc
 	// stopHTTPCheck 停止 http 插件巡检，未启动时为 nil。
 	stopHTTPCheck context.CancelFunc
@@ -100,7 +100,7 @@ func (s *Service) initIaCPlugin() error {
 	return nil
 }
 
-// RegisterPlugins 逐个注册本副本扫描到的 tf 插件，再检查注册表里已启用的 tf 插件本副本是否都有。
+// RegisterPlugins 注册本地目录扫描到的 tf 插件，并校验注册表中已启用的 tf 插件本地是否齐全。
 // 任何一步失败都返回错误，由 Run 让进程非 0 退出。
 func (s *Service) RegisterPlugins() error {
 	for _, entry := range s.iacPlugin.plugins {
@@ -121,8 +121,7 @@ func (s *Service) SetPluginReady() {
 	s.iacPlugin.ready.Store(true)
 }
 
-// StartPluginVersionWatch 启动运行期插件版本检查：本副本二进制落后于注册表已完成最高版本并持续数个周期后，通知进程优雅退出。
-// 检查随服务退出停止。没有本地 tf 插件时无需检查。
+// StartPluginVersionWatch 启动运行期 tf 插件版本监控，本地版本持续落后于注册表已启用最高版本时触发优雅退出。
 func (s *Service) StartPluginVersionWatch() {
 	if len(s.iacPlugin.plugins) == 0 {
 		return
@@ -153,7 +152,7 @@ func (s *Service) StartHTTPPluginCheck() {
 	go s.iacPlugin.httpPlugin.RunCheck(ctx, s.sd.IsMaster)
 }
 
-// StopPluginTasks 停止运行期插件版本检查与 http 插件巡检。
+// StopPluginTasks 停止运行期 tf 插件版本监控与 http 插件巡检。
 func (s *Service) StopPluginTasks() {
 	if s.iacPlugin.stopVersionWatch != nil {
 		s.iacPlugin.stopVersionWatch()

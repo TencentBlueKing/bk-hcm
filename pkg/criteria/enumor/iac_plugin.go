@@ -69,7 +69,7 @@ func (p IaCPluginProtocol) Validate() error {
 type IaCPluginAction string
 
 const (
-	// IaCPluginActionExit 版本回退：本副本不应继续服务，不修改任何记录，进程以非 0 退出。
+	// IaCPluginActionExit 版本回退：当前实例不应继续服务，不修改任何记录，进程以非 0 退出。
 	IaCPluginActionExit IaCPluginAction = "exit"
 	// IaCPluginActionRegister 需要注册该版本：没有记录则新建，处于 init / failed 的记录则重置后重入。
 	IaCPluginActionRegister IaCPluginAction = "register"

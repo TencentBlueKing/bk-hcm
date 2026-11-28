@@ -20,11 +20,7 @@
 package iacplugin
 
 import (
-	"errors"
-	"strings"
-
 	proto "hcm/pkg/api/cloud-server"
-	"hcm/pkg/api/core"
 	coreplugin "hcm/pkg/api/core/plugin"
 	dataplugin "hcm/pkg/api/data-service/plugin"
 	"hcm/pkg/criteria/constant"
@@ -34,12 +30,9 @@ import (
 	"hcm/pkg/iacplugin"
 	"hcm/pkg/iam/meta"
 	"hcm/pkg/kit"
-	"hcm/pkg/lock"
 	"hcm/pkg/logs"
 	"hcm/pkg/rest"
 	"hcm/pkg/tools/slice"
-
-	etcd3 "go.etcd.io/etcd/client/v3"
 )
 
 // SwitchIaCPlugin 启用或停用 IaC 插件。
@@ -75,11 +68,11 @@ func (s *svc) SwitchIaCPlugin(cts *rest.Contexts) (interface{}, error) {
 
 // switchIaCPlugin 持插件名锁，按该插件名下版本最高的记录判定状态规则并更新相关版本状态。
 func (s *svc) switchIaCPlugin(kt *kit.Kit, pluginName string, targetState enumor.IaCPluginState) error {
-	leaseID, err := s.tryLockIaCPlugin(kt, pluginName)
+	leaseID, err := s.mutex.TryLockIaCPlugin(kt, pluginName, constant.IaCPluginSwitchLockLeaseSeconds)
 	if err != nil {
 		return err
 	}
-	defer s.unlockIaCPlugin(kt, pluginName, leaseID)
+	defer s.mutex.UnlockIaCPlugin(kt, pluginName, leaseID)
 
 	records, current, err := s.listAndGetLatestIaCPlugin(kt, pluginName)
 	if err != nil {
@@ -99,6 +92,8 @@ func (s *svc) decideSwitch(kt *kit.Kit, current *coreplugin.IaCPlugin,
 	to enumor.IaCPluginState) ([]enumor.IaCPluginState, error) {
 
 	if current.State == to {
+		logs.Warnf("iac plugin %s@%s is already in %s state, skip switch, rid: %s",
+			current.PluginName, current.PluginVersion, to, kt.Rid)
 		return nil, nil
 	}
 	if current.State == enumor.IaCPluginStateInit {
@@ -114,8 +109,11 @@ func (s *svc) decideSwitch(kt *kit.Kit, current *coreplugin.IaCPlugin,
 			return nil, errf.Newf(errf.Aborted, "iac plugin %s@%s is in failed state (%s), please recover first",
 				current.PluginName, current.PluginVersion, current.Message)
 		}
-		schemaExists, err := s.isIaCPluginSchemaExists(kt, current.PluginName, current.PluginVersion)
+		schemaExists, err := s.client.DataService().Global.IacPluginSchema.Exists(kt,
+			current.PluginName, current.PluginVersion)
 		if err != nil {
+			logs.Errorf("check iac plugin schema exists failed, err: %v, plugin_name: %s, plugin_version: %s, rid: %s",
+				err, current.PluginName, current.PluginVersion, kt.Rid)
 			return nil, err
 		}
 		if !schemaExists {
@@ -131,8 +129,10 @@ func (s *svc) decideSwitch(kt *kit.Kit, current *coreplugin.IaCPlugin,
 func (s *svc) listAndGetLatestIaCPlugin(kt *kit.Kit,
 	pluginName string) ([]coreplugin.IaCPlugin, *coreplugin.IaCPlugin, error) {
 
-	records, err := s.listIaCPluginsByName(kt, pluginName)
+	records, err := s.client.DataService().Global.IaCPlugin.ListAll(kt,
+		tools.EqualExpression("plugin_name", pluginName), nil)
 	if err != nil {
+		logs.Errorf("list iac plugin by name failed, err: %v, plugin_name: %s, rid: %s", err, pluginName, kt.Rid)
 		return nil, nil, err
 	}
 
@@ -147,38 +147,6 @@ func (s *svc) listAndGetLatestIaCPlugin(kt *kit.Kit,
 	}
 
 	return records, current, nil
-}
-
-func (s *svc) listIaCPluginsByName(kt *kit.Kit, pluginName string) ([]coreplugin.IaCPlugin, error) {
-	resp, err := s.client.DataService().Global.IaCPlugin.List(kt, &core.ListReq{
-		Filter: tools.EqualExpression("plugin_name", pluginName),
-		Page:   &core.BasePage{Limit: core.DefaultMaxPageLimit},
-	})
-	if err != nil {
-		logs.Errorf("list iac plugin by name failed, err: %v, plugin_name: %s, rid: %s", err, pluginName, kt.Rid)
-		return nil, err
-	}
-
-	return resp.Details, nil
-}
-
-// isIaCPluginSchemaExists 按插件名和版本查询 Schema 是否已落库。
-func (s *svc) isIaCPluginSchemaExists(kt *kit.Kit, pluginName, pluginVersion string) (bool, error) {
-	resp, err := s.client.DataService().Global.IacPluginSchema.List(kt, &core.ListReq{
-		Fields: []string{"id"},
-		Filter: tools.ExpressionAnd(
-			tools.RuleEqual("plugin_name", pluginName),
-			tools.RuleEqual("plugin_version", pluginVersion),
-		),
-		Page: &core.BasePage{Limit: 1},
-	})
-	if err != nil {
-		logs.Errorf("list iac plugin schema failed, err: %v, plugin_name: %s, plugin_version: %s, rid: %s",
-			err, pluginName, pluginVersion, kt.Rid)
-		return false, err
-	}
-
-	return resp != nil && len(resp.Details) > 0, nil
 }
 
 func (s *svc) updateIaCPluginsState(kt *kit.Kit, records []coreplugin.IaCPlugin,
@@ -201,28 +169,4 @@ func (s *svc) updateIaCPluginsState(kt *kit.Kit, records []coreplugin.IaCPlugin,
 	}
 
 	return nil
-}
-
-func (s *svc) tryLockIaCPlugin(kt *kit.Kit, pluginName string) (etcd3.LeaseID, error) {
-	leaseID, err := s.mutex.TryLockWithTTL(lock.IaCPluginKey(pluginName), constant.IaCPluginSwitchLockLeaseSeconds)
-	if err != nil {
-		if errors.Is(err, lock.ErrLockFailed) {
-			return 0, errf.Newf(errf.Aborted,
-				"iac plugin %s is being registered, upgraded or modified, please retry later", pluginName)
-		}
-		logs.Errorf("try lock iac plugin failed, err: %v, plugin_name: %s, rid: %s", err, pluginName, kt.Rid)
-		return 0, err
-	}
-
-	return leaseID, nil
-}
-
-func (s *svc) unlockIaCPlugin(kt *kit.Kit, pluginName string, leaseID etcd3.LeaseID) {
-	if err := s.mutex.UnLock(leaseID); err != nil {
-		if strings.Contains(err.Error(), "requested lease not found") {
-			return
-		}
-		logs.Errorf("unlock iac plugin lock failed, err: %v, plugin_name: %s, lease_id: %d, rid: %s",
-			err, pluginName, leaseID, kt.Rid)
-	}
 }

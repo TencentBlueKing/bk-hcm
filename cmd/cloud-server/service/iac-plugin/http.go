@@ -55,7 +55,7 @@ func (s *svc) RegisterIaCPlugin(cts *rest.Contexts) (interface{}, error) {
 	return result, nil
 }
 
-// UpgradeIaCPlugin 触发 http 插件的升级检查（探活发现新版本则注册并同步 Schema，failed 时重做同步以恢复）。同步执行，完成后才响应。
+// UpgradeIaCPlugin 升级 http 插件（发现新版本时注册并同步 Schema，当前版本同步失败时重试同步）。
 func (s *svc) UpgradeIaCPlugin(cts *rest.Contexts) (interface{}, error) {
 	req := new(hciac.HTTPUpgradeReq)
 	if err := cts.DecodeInto(req); err != nil {

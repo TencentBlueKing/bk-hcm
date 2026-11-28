@@ -129,7 +129,7 @@ func TestVerifyHash(t *testing.T) {
 		{"mismatch", extOf(t, map[string]string{"linux_amd64": "bbb"}), enumor.IaCPluginHashResultMismatch},
 		{"other arch only", extOf(t, map[string]string{"linux_arm64": "ccc"}), enumor.IaCPluginHashResultMissing},
 		{"empty arch hash", extOf(t, map[string]string{"linux_amd64": ""}), enumor.IaCPluginHashResultMissing},
-		{"no architectures key", tabletypes.JsonField(`{}`), enumor.IaCPluginHashResultMissing},
+		{"no architectures key", `{}`, enumor.IaCPluginHashResultMissing},
 		{"empty extension", "", enumor.IaCPluginHashResultMissing},
 	}
 
@@ -140,7 +140,7 @@ func TestVerifyHash(t *testing.T) {
 		}
 	}
 
-	if _, err := VerifyHash(&coreplugin.IaCPlugin{ID: "1", Extension: tabletypes.JsonField(`not json`)}, "linux_amd64", "aaa"); err == nil {
+	if _, err := VerifyHash(&coreplugin.IaCPlugin{ID: "1", Extension: `not json`}, "linux_amd64", "aaa"); err == nil {
 		t.Error("invalid extension want err")
 	}
 	if _, err := VerifyHash(nil, "linux_amd64", "aaa"); err == nil {
@@ -170,7 +170,7 @@ func TestWithArchHash(t *testing.T) {
 		t.Fatalf("other fields must be preserved, got %v", got.Other)
 	}
 
-	for _, empty := range []tabletypes.JsonField{"", tabletypes.JsonField(`{}`), tabletypes.JsonField(`{"architectures":null}`)} {
+	for _, empty := range []tabletypes.JsonField{"", `{}`, `{"architectures":null}`} {
 		out, err = WithArchHash(empty, "linux_amd64", "aaa")
 		if err != nil {
 			t.Fatalf("from %s: %v", empty, err)
@@ -181,7 +181,7 @@ func TestWithArchHash(t *testing.T) {
 		}
 	}
 
-	if _, err = WithArchHash(tabletypes.JsonField(`[1]`), "linux_amd64", "aaa"); err == nil {
+	if _, err = WithArchHash(`[1]`, "linux_amd64", "aaa"); err == nil {
 		t.Error("non-object extension want err")
 	}
 }

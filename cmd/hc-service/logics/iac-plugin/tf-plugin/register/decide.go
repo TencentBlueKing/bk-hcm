@@ -40,7 +40,7 @@ type Decision struct {
 	Record *coreplugin.IaCPlugin
 }
 
-// Decide 根据该插件名下的全部注册记录与本副本的目录版本，判定下一步动作。
+// Decide 根据该插件名下的全部注册记录与本地目录扫描到的版本，判定下一步动作。
 //
 // 它是纯函数，不做任何 I/O：records 必须是持插件名锁后读到的最新记录，version 是目录检查得到的版本。
 // 判定顺序：

@@ -25,7 +25,6 @@ import (
 	"fmt"
 	"time"
 
-	"hcm/cmd/hc-service/logics/iac-plugin/store"
 	"hcm/pkg/api/core"
 	coreplugin "hcm/pkg/api/core/plugin"
 	"hcm/pkg/criteria/enumor"
@@ -86,7 +85,7 @@ func (s *Service) checkPlugin(kt *kit.Kit, pluginName string, failCounts map[str
 		}
 		return
 	}
-	defer s.unlock(kt, pluginName, leaseID)
+	defer s.mutex.UnlockIaCPlugin(kt, pluginName, leaseID)
 
 	records, latest, err := s.listAndGetLatest(kt, pluginName)
 	if err != nil {
@@ -139,7 +138,7 @@ func (s *Service) onProbeFailed(kt *kit.Kit, latest *coreplugin.IaCPlugin, failC
 	delete(failCounts, latest.PluginName)
 
 	reason := fmt.Errorf("probe failed %d consecutive times: %v", n, cause)
-	err := store.MarkFailed(kt, s.dataCli, latest.ID, enumor.IaCPluginStateEnabled, reason)
+	err := s.dataCli.Global.IaCPlugin.MarkFailed(kt, latest.ID, enumor.IaCPluginStateEnabled, reason)
 	if err != nil {
 		logs.Errorf("mark http iac plugin %s@%s as failed failed, err: %v, rid: %s", latest.PluginName,
 			latest.PluginVersion, err, kt.Rid)
@@ -152,27 +151,12 @@ func (s *Service) onProbeFailed(kt *kit.Kit, latest *coreplugin.IaCPlugin, failC
 
 // listHTTPPluginNames 列出所有 http 插件名（去重）。
 func (s *Service) listHTTPPluginNames(kt *kit.Kit) ([]string, error) {
-	names := make([]string, 0)
-	req := &core.ListReq{
-		Fields: []string{"plugin_name"},
-		Filter: tools.EqualExpression("protocol", enumor.IaCPluginProtocolHTTP),
-		Page:   core.NewDefaultBasePage(),
-	}
-	for {
-		res, err := s.dataCli.Global.IaCPlugin.List(kt, req)
-		if err != nil {
-			return nil, err
-		}
-		if res == nil {
-			break
-		}
-
-		names = append(names, slice.Map(res.Details, func(one coreplugin.IaCPlugin) string { return one.PluginName })...)
-		if uint(len(res.Details)) < req.Page.Limit {
-			break
-		}
-		req.Page.Start += uint32(req.Page.Limit)
+	details, err := s.dataCli.Global.IaCPlugin.ListAll(kt,
+		tools.EqualExpression("protocol", enumor.IaCPluginProtocolHTTP), []string{"plugin_name"})
+	if err != nil {
+		return nil, err
 	}
 
+	names := slice.Map(details, func(one coreplugin.IaCPlugin) string { return one.PluginName })
 	return slice.Unique(names), nil
 }

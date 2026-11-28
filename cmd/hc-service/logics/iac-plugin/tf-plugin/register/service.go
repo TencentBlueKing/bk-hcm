@@ -27,17 +27,16 @@ import (
 	"strings"
 	"time"
 
-	"hcm/cmd/hc-service/logics/iac-plugin/store"
 	"hcm/cmd/hc-service/logics/iac-plugin/tf-plugin/discovery"
 	pluginschema "hcm/cmd/hc-service/logics/plugin/schema"
 	"hcm/cmd/hc-service/logics/tfruntime"
+	"hcm/cmd/hc-service/logics/tfruntime/executor"
 	"hcm/cmd/hc-service/types"
 	coreplugin "hcm/pkg/api/core/plugin"
 	dataplugin "hcm/pkg/api/data-service/plugin"
 	dataservice "hcm/pkg/client/data-service"
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
-	tabletypes "hcm/pkg/dal/table/types"
 	"hcm/pkg/iacplugin"
 	"hcm/pkg/kit"
 	"hcm/pkg/lock"
@@ -46,16 +45,28 @@ import (
 	"hcm/pkg/tools/slice"
 )
 
-// errPluginVersionConflict 本副本的状态与注册表冲突（版本回退、sha256 不一致），进程应退出，且不修改任何记录。
+// errPluginVersionConflict 本地插件状态与注册表冲突（版本回退、sha256 不一致），进程应退出且不修改记录。
 var errPluginVersionConflict = errors.New("conflicts with the registered plugin")
 
-// errMissingPlugin 注册表里有已启用的 tf 插件，但本副本目录里没有，副本应当退出。
+// errMissingPlugin 注册表里有已启用的 tf 插件，但本地插件目录里不存在，进程应当退出。
 var errMissingPlugin = errors.New("enabled plugin is missing in the local plugin directory")
 
-type schemaGetterFunc func(kt *kit.Kit) (*coreplugin.PluginSchema, error)
+type tfSchemaGetter struct {
+	executor      executor.Executor
+	pluginName    string
+	pluginVersion string
+}
 
-func (f schemaGetterFunc) GetSchema(kt *kit.Kit) (*coreplugin.PluginSchema, error) {
-	return f(kt)
+func (g *tfSchemaGetter) GetSchema(kt *kit.Kit) (*coreplugin.PluginSchema, error) {
+	schema, err := g.executor.GetProviderSchema(kt.Ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get provider schema failed: %w", err)
+	}
+	coreSchema, err := toCorePluginSchema(schema, g.pluginName, g.pluginVersion)
+	if err != nil {
+		return nil, fmt.Errorf("convert provider schema failed: %w", err)
+	}
+	return coreSchema, nil
 }
 
 // Options 注册参数。
@@ -85,19 +96,15 @@ func New(dataCli *dataservice.Client, etcdMutex *lock.EtcdMutex, schemaMgr *plug
 
 // Register 注册一个插件，成功返回 nil；任何错误都意味着 hc-service 应当退出。
 // 注册、升级、启停共用同一把插件名锁
-func (s *Service) Register(kt *kit.Kit, entry discovery.Entry) error {
+func (s *Service) Register(kt *kit.Kit, entry discovery.PluginEntry) error {
 	leaseID, err := s.etcdMutex.Lock(kt.Ctx, lock.IaCPluginKey(entry.PluginName), s.opts.LockLeaseSeconds,
 		s.opts.LockWaitTimeout)
 	if err != nil {
 		return fmt.Errorf("lock plugin %s failed: %w", entry.PluginName, err)
 	}
-	defer func() {
-		if uerr := s.etcdMutex.UnLock(leaseID); uerr != nil {
-			logs.Errorf("unlock plugin %s failed, err: %v, rid: %s", entry.PluginName, uerr, kt.Rid)
-		}
-	}()
+	defer s.etcdMutex.UnlockIaCPlugin(kt, entry.PluginName, leaseID)
 
-	records, err := store.List(kt, s.dataCli, tools.EqualExpression("plugin_name", entry.PluginName))
+	records, err := s.dataCli.Global.IaCPlugin.ListAll(kt, tools.EqualExpression("plugin_name", entry.PluginName), nil)
 	if err != nil {
 		return err
 	}
@@ -130,18 +137,23 @@ func (s *Service) Register(kt *kit.Kit, entry discovery.Entry) error {
 
 // saveInitRecord 把该版本的记录落库为 init，返回记录 ID 供同步流程收尾。
 // 没有记录则新建；处于 init（上次中断）或 failed（上次失败）的记录则重置为 init 后重入。
-func (s *Service) saveInitRecord(kt *kit.Kit, entry discovery.Entry, rec *coreplugin.IaCPlugin) (string, error) {
+func (s *Service) saveInitRecord(kt *kit.Kit, entry discovery.PluginEntry, rec *coreplugin.IaCPlugin) (string, error) {
 	if rec == nil {
-		return store.Insert(kt, s.dataCli, &dataplugin.IaCPluginCreateReq{
+		return s.dataCli.Global.IaCPlugin.CreateInit(kt, &dataplugin.IaCPluginCreateReq{
 			PluginName:    entry.PluginName,
 			PluginVersion: entry.PluginVersion,
 			Protocol:      enumor.IaCPluginProtocolTFProvider,
 			State:         enumor.IaCPluginStateInit,
-			Extension:     tabletypes.JsonField(`{}`),
+			Extension:     `{}`,
 		})
 	}
 
-	err := store.Update(kt, s.dataCli, rec.ID, rec.State, enumor.IaCPluginStateInit, "", nil)
+	err := s.dataCli.Global.IaCPlugin.Update(kt, &dataplugin.IaCPluginUpdateReq{
+		ID:           rec.ID,
+		CurrentState: rec.State,
+		State:        enumor.IaCPluginStateInit,
+		Message:      cvt.ValToPtr(""),
+	})
 	if err != nil {
 		return "", fmt.Errorf("reset plugin %s@%s to init failed: %w", rec.PluginName, rec.PluginVersion, err)
 	}
@@ -150,7 +162,7 @@ func (s *Service) saveInitRecord(kt *kit.Kit, entry discovery.Entry, rec *corepl
 }
 
 // verifyRecord 已注册完成的版本只校验本架构 sha256，不拉起进程、不同步 Schema。
-func (s *Service) verifyRecord(kt *kit.Kit, entry discovery.Entry, rec *coreplugin.IaCPlugin) error {
+func (s *Service) verifyRecord(kt *kit.Kit, entry discovery.PluginEntry, rec *coreplugin.IaCPlugin) error {
 	result, err := VerifyHash(rec, entry.Arch, entry.SHA256)
 	if err != nil {
 		return err
@@ -172,7 +184,14 @@ func (s *Service) verifyRecord(kt *kit.Kit, entry discovery.Entry, rec *coreplug
 		if err != nil {
 			return err
 		}
-		if err = store.Update(kt, s.dataCli, rec.ID, rec.State, rec.State, ext, nil); err != nil {
+		err = s.dataCli.Global.IaCPlugin.Update(kt, &dataplugin.IaCPluginUpdateReq{
+			ID:           rec.ID,
+			CurrentState: rec.State,
+			State:        rec.State,
+			Message:      cvt.ValToPtr(""),
+			Extension:    ext,
+		})
+		if err != nil {
 			return fmt.Errorf("write sha256 of %s for plugin %s@%s failed: %w", entry.Arch,
 				entry.PluginName, entry.PluginVersion, err)
 		}
@@ -184,7 +203,7 @@ func (s *Service) verifyRecord(kt *kit.Kit, entry discovery.Entry, rec *coreplug
 }
 
 // syncSchemaAndUpdate 同步 Schema，并把记录从 init 收尾为 enabled / disabled / failed。
-func (s *Service) syncSchemaAndUpdate(kt *kit.Kit, entry discovery.Entry, id string,
+func (s *Service) syncSchemaAndUpdate(kt *kit.Kit, entry discovery.PluginEntry, id string,
 	records []coreplugin.IaCPlugin) error {
 
 	if err := s.syncSchema(kt, entry); err != nil {
@@ -193,13 +212,19 @@ func (s *Service) syncSchemaAndUpdate(kt *kit.Kit, entry discovery.Entry, id str
 		return fmt.Errorf("register plugin %s@%s failed: %w", entry.PluginName, entry.PluginVersion, err)
 	}
 
-	target := iacplugin.InheritState(records, entry.PluginVersion)
-	ext, err := WithArchHash(tabletypes.JsonField(`{}`), entry.Arch, entry.SHA256)
+	target := iacplugin.CalcTargetState(records, entry.PluginVersion)
+	ext, err := WithArchHash(`{}`, entry.Arch, entry.SHA256)
 	if err != nil {
 		return err
 	}
 
-	err = store.Update(kt, s.dataCli, id, enumor.IaCPluginStateInit, target, ext, nil)
+	err = s.dataCli.Global.IaCPlugin.Update(kt, &dataplugin.IaCPluginUpdateReq{
+		ID:           id,
+		CurrentState: enumor.IaCPluginStateInit,
+		State:        target,
+		Message:      cvt.ValToPtr(""),
+		Extension:    ext,
+	})
 	if err != nil {
 		return fmt.Errorf("mark plugin %s@%s as %s failed: %w", entry.PluginName, entry.PluginVersion, target, err)
 	}
@@ -210,7 +235,7 @@ func (s *Service) syncSchemaAndUpdate(kt *kit.Kit, entry discovery.Entry, id str
 
 // syncSchema 拉起一次性进程并同步插件的 Schema。Sync 只通过 SchemaGetter 取 Schema，不感知插件是本地进程还是 http 后端；
 // 这里的一次性进程是我们拉起的，所以由我们负责关闭：无论成败，只要拉起成功就一定 Close，拉起失败时不调用 Sync。
-func (s *Service) syncSchema(kt *kit.Kit, entry discovery.Entry) error {
+func (s *Service) syncSchema(kt *kit.Kit, entry discovery.PluginEntry) error {
 	manager := tfruntime.NewProcessManager(entry.PluginName, entry.ExecPath, nil, "", "")
 	defer func() {
 		if cerr := manager.Close(); cerr != nil {
@@ -219,23 +244,16 @@ func (s *Service) syncSchema(kt *kit.Kit, entry discovery.Entry) error {
 		}
 	}()
 
-	executor, err := manager.Start(kt.Ctx)
+	exec, err := manager.Start(kt.Ctx)
 	if err != nil {
 		return fmt.Errorf("start plugin executor failed: %w", err)
 	}
 
-	// 只把执行器"取 Schema 的方法"交给 SyncSchema，执行器与进程管理对象都不进入同步逻辑。
-	getter := schemaGetterFunc(func(kt *kit.Kit) (*coreplugin.PluginSchema, error) {
-		schema, err := executor.GetProviderSchema(kt.Ctx)
-		if err != nil {
-			return nil, fmt.Errorf("get provider schema failed: %w", err)
-		}
-		coreSchema, err := toCorePluginSchema(schema, entry.PluginName, entry.PluginVersion)
-		if err != nil {
-			return nil, fmt.Errorf("convert provider schema failed: %w", err)
-		}
-		return coreSchema, nil
-	})
+	getter := &tfSchemaGetter{
+		executor:      exec,
+		pluginName:    entry.PluginName,
+		pluginVersion: entry.PluginVersion,
+	}
 
 	result, err := s.schemaMgr.SyncSchema(kt, getter)
 	if err != nil {
@@ -275,18 +293,17 @@ func toCorePluginSchema(in *types.ProviderSchema, pluginName, pluginVersion stri
 }
 
 // markFailed 把记录置 failed 并写入失败原因。写库失败只记日志：记录保持 init，不影响重入。
-func (s *Service) markFailed(kt *kit.Kit, entry discovery.Entry, id string, cause error) {
-	if err := store.MarkFailed(kt, s.dataCli, id, enumor.IaCPluginStateInit, cause); err != nil {
+func (s *Service) markFailed(kt *kit.Kit, entry discovery.PluginEntry, id string, cause error) {
+	if err := s.dataCli.Global.IaCPlugin.MarkFailed(kt, id, enumor.IaCPluginStateInit, cause); err != nil {
 		logs.Errorf("mark plugin %s@%s as failed failed, err: %v, cause: %v, rid: %s", entry.PluginName,
 			entry.PluginVersion, err, cause, kt.Rid)
 	}
 }
 
-// CheckRegistered 读取注册表并检查是否有已启用的 tf 插件在本副本目录里缺失；缺失时返回 ErrMissingPlugin。
-//
-// 它只读，不加锁。要在所有插件注册完成之后调用：本副本刚注册的插件此时已经在注册表里，不会被误判。
-func (s *Service) CheckRegistered(kt *kit.Kit, entries map[string]discovery.Entry) error {
-	records, err := store.List(kt, s.dataCli, tools.EqualExpression("protocol", enumor.IaCPluginProtocolTFProvider))
+// CheckRegistered 检查注册表中已启用的 tf 插件是否均存在于本地目录。
+func (s *Service) CheckRegistered(kt *kit.Kit, entries map[string]discovery.PluginEntry) error {
+	records, err := s.dataCli.Global.IaCPlugin.ListAll(kt,
+		tools.EqualExpression("protocol", enumor.IaCPluginProtocolTFProvider), nil)
 	if err != nil {
 		return fmt.Errorf("list tf_provider plugins failed: %w", err)
 	}
@@ -302,14 +319,8 @@ func (s *Service) CheckRegistered(kt *kit.Kit, entries map[string]discovery.Entr
 	return nil
 }
 
-// FindMissing 找出"注册表里已启用、本副本目录里却没有"的插件名。
-//
-// 每个插件名只看版本最高的那条记录（不论状态）的 state：enabled 才算缺失；disabled / init / failed 都跳过。
-//   - disabled：管理员主动停用，本来就不该有流量，目录里没有无妨；
-//   - init / failed：注册没成功，没有可用版本可言，缺失不是新问题，由注册流程自己收敛。
-//
-// 本副本目录里有该插件（不论版本）就不算缺失：版本是否匹配由 Decide 负责。
-func FindMissing(records []coreplugin.IaCPlugin, entries map[string]discovery.Entry) ([]string, error) {
+// FindMissing 返回注册表中最高版本为 enabled 但本地目录缺失的 tf 插件名列表。
+func FindMissing(records []coreplugin.IaCPlugin, entries map[string]discovery.PluginEntry) ([]string, error) {
 	// 按插件名分组：同一插件名可能有多条版本记录。
 	byName := make(map[string][]coreplugin.IaCPlugin, len(records))
 	for _, rec := range slice.Filter(records, func(rec coreplugin.IaCPlugin) bool {

@@ -40,17 +40,17 @@ func NewClient(client rest.ClientInterface) *Client {
 // RegisterHTTP 注册 http 插件。
 func (c *Client) RegisterHTTP(kt *kit.Kit, req *proto.HTTPRegisterReq) (*proto.HTTPPluginResult, error) {
 	return common.Request[proto.HTTPRegisterReq, proto.HTTPPluginResult](c.client, rest.POST, kt, req,
-		"/iac_plugins/http/register")
+		"/http/register")
 }
 
 // UpgradeHTTP 按插件名升级 http 插件，作用于该插件名下版本最高的记录。
 func (c *Client) UpgradeHTTP(kt *kit.Kit, req *proto.HTTPUpgradeReq) (*proto.HTTPPluginResult, error) {
 	return common.Request[proto.HTTPUpgradeReq, proto.HTTPPluginResult](c.client, rest.POST, kt, req,
-		"/iac_plugins/http/upgrade")
+		"/http/upgrade")
 }
 
 // UpdateHTTP 按插件名修改 http 插件，作用于该插件名下版本最高的记录。
 func (c *Client) UpdateHTTP(kt *kit.Kit, req *proto.HTTPUpdateReq) (*proto.HTTPPluginResult, error) {
 	return common.Request[proto.HTTPUpdateReq, proto.HTTPPluginResult](c.client, rest.POST, kt, req,
-		"/iac_plugins/http/update")
+		"/http/update")
 }

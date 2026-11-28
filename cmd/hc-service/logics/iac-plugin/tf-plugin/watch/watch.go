@@ -17,11 +17,7 @@
  * to the current version of the project delivered to anyone in the future.
  */
 
-// Package watch 运行期检查本副本的 tf 插件二进制是否已落后于注册表。
-//
-// 二进制部署没有滚动替换语义：某个副本被重启并注册了新版本后，仍运行旧二进制的副本不会自己发现。
-// 本包按周期读取注册表，本副本版本低于已完成最高版本并连续若干个周期成立时通知退出。
-// 只读注册表：不加锁、不写库、不写审计，不会干扰正在进行的注册或升级。
+// Package watch 运行期周期检查本地 tf 插件版本是否落后于注册表，持续落后时通知进程退出。
 package watch
 
 import (
@@ -35,6 +31,7 @@ import (
 	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/dal/dao/tools"
 	"hcm/pkg/iacplugin"
+	"hcm/pkg/kit"
 	"hcm/pkg/logs"
 )
 
@@ -54,10 +51,10 @@ type Options struct {
 	Threshold int
 }
 
-// Watcher 周期性检查本副本版本是否落后。
+// Watcher 周期性检查本地 tf 插件版本是否落后。
 type Watcher struct {
 	cli      *global.IaCPluginClient
-	entries  map[string]discovery.Entry
+	entries  map[string]discovery.PluginEntry
 	onBehind func()
 	opts     Options
 
@@ -66,7 +63,7 @@ type Watcher struct {
 }
 
 // New 创建 Watcher。entries 是启动时目录检查的结果（只读）；onBehind 用于通知退出。
-func New(cli *global.IaCPluginClient, entries map[string]discovery.Entry,
+func New(cli *global.IaCPluginClient, entries map[string]discovery.PluginEntry,
 	onBehind func(), opts Options) *Watcher {
 
 	if opts.Interval <= 0 {
@@ -117,19 +114,9 @@ func (w *Watcher) check(ctx context.Context) bool {
 			return false
 		}
 
-		res, err := w.cli.List(kt, &core.ListReq{
-			Filter: tools.EqualExpression("plugin_name", entry.PluginName),
-			Page:   core.NewDefaultBasePage(),
-		})
+		behind, registered, err := w.isPluginVersionBehind(kt, entry)
 		if err != nil {
-			// 读取失败只跳过本轮，不计数：把 data-service 的抖动当成"版本落后"会误杀健康副本。
-			logs.Warnf("list plugin %s records failed, skip version check this round, err: %v, rid: %s",
-				entry.PluginName, err, kt.Rid)
-			continue
-		}
-
-		behind, registered, err := isPluginVersionBehind(res.Details, entry.PluginVersion)
-		if err != nil {
+			// 读取或校验失败只跳过本轮，不计数：避免因 data-service 抖动误杀健康实例。
 			logs.Warnf("check plugin %s version behind failed, skip this round, err: %v, rid: %s",
 				entry.PluginName, err, kt.Rid)
 			continue
@@ -157,11 +144,16 @@ func (w *Watcher) check(ctx context.Context) bool {
 	return false
 }
 
-// isPluginVersionBehind 判断本地版本是否低于注册表中已完成（enabled / disabled）的最高版本。
-//
-// 只统计已完成的记录：init / failed 的更高版本说明升级还没成功，这时旧副本仍是当前唯一可用的版本，不能算落后。
-// 本地版本高于已完成最高版本（自己的新版本还没注册完）同样不算落后。
-func isPluginVersionBehind(records []coreplugin.IaCPlugin, localVersion string) (behind bool, registered string, err error) {
+// isPluginVersionBehind 查询注册表并判断本地版本是否落后于当前最高版本。
+// 仅当已完成记录（enabled / disabled）中的最高版本处于 enabled 且高于本地版本时返回 true。
+func (w *Watcher) isPluginVersionBehind(kt *kit.Kit,
+	entry discovery.PluginEntry) (behind bool, registered string, err error) {
+
+	records, err := w.cli.ListAll(kt, tools.EqualExpression("plugin_name", entry.PluginName), nil)
+	if err != nil {
+		return false, "", err
+	}
+
 	filteredRecords := make([]coreplugin.IaCPlugin, 0, len(records))
 	for _, rec := range records {
 		if rec.State == enumor.IaCPluginStateEnabled || rec.State == enumor.IaCPluginStateDisabled {
@@ -173,11 +165,11 @@ func isPluginVersionBehind(records []coreplugin.IaCPlugin, localVersion string) 
 	if err != nil {
 		return false, "", err
 	}
-	if highest == nil {
+	if highest == nil || highest.State != enumor.IaCPluginStateEnabled {
 		return false, "", nil
 	}
 
-	cmp, err := iacplugin.CompareVersion(localVersion, highest.PluginVersion)
+	cmp, err := iacplugin.CompareVersion(entry.PluginVersion, highest.PluginVersion)
 	if err != nil {
 		return false, "", err
 	}

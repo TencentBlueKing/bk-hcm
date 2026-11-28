@@ -20,11 +20,18 @@
 package global
 
 import (
+	"fmt"
+
 	"hcm/pkg/api/core"
+	coreplugin "hcm/pkg/api/core/plugin"
 	dataplugin "hcm/pkg/api/data-service/plugin"
 	"hcm/pkg/client/common"
+	"hcm/pkg/criteria/constant"
+	"hcm/pkg/criteria/enumor"
 	"hcm/pkg/kit"
 	"hcm/pkg/rest"
+	"hcm/pkg/runtime/filter"
+	cvt "hcm/pkg/tools/converter"
 )
 
 // IaCPluginClient is data service iac plugin api client.
@@ -59,4 +66,61 @@ func (c *IaCPluginClient) Update(kt *kit.Kit, req *dataplugin.IaCPluginUpdateReq
 func (c *IaCPluginClient) List(kt *kit.Kit, req *core.ListReq) (*dataplugin.IaCPluginListResult, error) {
 	return common.Request[core.ListReq, dataplugin.IaCPluginListResult](
 		c.client, rest.POST, kt, req, "/iac_plugins/list")
+}
+
+// ListAll 翻页查询满足过滤条件的全部 iac plugin 记录。
+func (c *IaCPluginClient) ListAll(kt *kit.Kit, expr *filter.Expression,
+	fields []string) ([]coreplugin.IaCPlugin, error) {
+
+	details := make([]coreplugin.IaCPlugin, 0)
+	page := core.NewDefaultBasePage()
+	for {
+		result, err := c.List(kt, &core.ListReq{Filter: expr, Fields: fields, Page: page})
+		if err != nil {
+			return nil, err
+		}
+		if result == nil {
+			return nil, fmt.Errorf("list iac plugin got empty response")
+		}
+
+		details = append(details, result.Details...)
+		if uint(len(result.Details)) < page.Limit {
+			return details, nil
+		}
+		page.Start += uint32(page.Limit)
+	}
+}
+
+// CreateInit 插入一条 init 状态的插件记录并返回其记录 ID。
+func (c *IaCPluginClient) CreateInit(kt *kit.Kit, req *dataplugin.IaCPluginCreateReq) (string, error) {
+	if req.State == "" {
+		req.State = enumor.IaCPluginStateInit
+	}
+
+	created, err := c.Create(kt, req)
+	if err != nil {
+		return "", fmt.Errorf("create plugin %s@%s record failed: %w", req.PluginName, req.PluginVersion, err)
+	}
+	if len(created.IDs) != 1 {
+		return "", fmt.Errorf("create plugin %s@%s got %d ids, expect 1", req.PluginName, req.PluginVersion,
+			len(created.IDs))
+	}
+
+	return created.IDs[0], nil
+}
+
+// MarkFailed 将当前状态为 expectState 的插件记录置为 failed，并写入按列宽截断的失败原因。
+func (c *IaCPluginClient) MarkFailed(kt *kit.Kit, id string, expectState enumor.IaCPluginState,
+	cause error) error {
+
+	msg := cause.Error()
+	if r := []rune(msg); len(r) > constant.IaCPluginMessageMaxLen {
+		msg = string(r[:constant.IaCPluginMessageMaxLen])
+	}
+	return c.Update(kt, &dataplugin.IaCPluginUpdateReq{
+		ID:           id,
+		CurrentState: expectState,
+		State:        enumor.IaCPluginStateFailed,
+		Message:      cvt.ValToPtr(msg),
+	})
 }

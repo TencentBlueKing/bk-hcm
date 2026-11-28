@@ -2,7 +2,7 @@
 
 - 该接口提供版本：v9.9.9+。
 - 该接口所需权限：平台-全局配置。
-- 该接口功能描述：注册 http 类型的 IaC 插件。同步执行，注册完成后才响应。插件版本取自插件探活接口返回的 `plugin_version`，不由请求传入。流程：持插件名锁 → 检查插件名未被 tf_provider 插件占用 → 地址与加密配置校验 → 经蓝鲸 API 网关请求 `{网关地址前缀}{api_path}/health` 探活 → 写入 `init` 记录 → 同步 Schema → 成功为 `enabled`（上一版本为 `disabled` 时为 `disabled`），失败为 `failed`。地址、加密配置校验失败或探活失败时不写注册表。
+- 该接口功能描述：注册 http 类型的 IaC 插件。接口同步执行，完成后返回注册结果；插件版本号由服务端探活插件健康检查接口获取，无需请求传入。
 
 ### URL
 
@@ -65,18 +65,9 @@ POST /api/v1/cloud/iac_plugins/register
 
 #### data
 
-| 参数名称           | 参数类型   | 描述                                       |
-|----------------|--------|------------------------------------------|
-| id             | string | 本次注册的记录 ID                               |
-| plugin_name    | string | 插件名称                                     |
-| plugin_version | string | 插件版本（探活返回）                               |
-| state          | string | 注册后的状态（枚举值：enabled、disabled）             |
-
-### 错误码与提示说明
-
-| 错误码     | 场景与提示说明 |
-|---------|--------------|
-| 2000001 | 参数错误：<br>1. 必填字段缺失、`plugin_name` / `api_path` / `memo` 不合法，或 `api_path` 拼接后不在蓝鲸 API 网关内<br>2. `crypto_type` 不支持、`public_key` 无法解析、不是 RSA 或长度不足 3072 位<br>3. 插件名已被 tf_provider 插件占用：`plugin name <name> is already used by a tf_provider plugin` |
-| 2000006 | 业务处理异常：<br>1. 插件正在注册、升级或变更中（拿不到插件名锁）：`iac plugin <name> is being registered, upgraded or modified, please retry later`<br>2. 已注册（版本最高记录为 `enabled` / `disabled`）：`iac plugin <name> is already registered, current version: <version>, state: <state>`<br>3. 探活版本低于已有记录：`iac plugin <name> probed version <v> is lower than the current version <v>, rollback is not supported yet`<br>4. 探活失败（超时、非 200、重定向、插件返回错误、缺少 `plugin_version`），信息带插件返回的 `message`<br>5. Schema 同步失败（记录置为 `failed`，`message` 写明原因）：`sync iac plugin <name>@<version> schema failed, err: <原因>`<br>6. 收尾时记录已被其他流程改动（条件更新冲突） |
-| 2000007 | 鉴权服务异常：无法判断调用者是否有权限，`authorize failed` |
-| 2030403 | 无权限：调用者缺少平台全局配置权限，`no permission` |
+| 参数名称           | 参数类型   | 描述                           |
+|----------------|--------|------------------------------|
+| id             | string | 本次注册的记录 ID                   |
+| plugin_name    | string | 插件名称                         |
+| plugin_version | string | 插件版本（探活返回）                   |
+| state          | string | 注册后的状态（枚举值：enabled、disabled） |
