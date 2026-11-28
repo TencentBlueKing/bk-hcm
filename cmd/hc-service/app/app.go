@@ -44,8 +44,6 @@ func Run(opt *options.Option) error {
 		return err
 	}
 
-	// 先启动 REST 服务暴露 /healthz 和 /alivez，再执行插件注册；
-	// 注册期间 /healthz 返回 503、/alivez 保持 200，避免就绪探针放流量或存活探针误杀进程。
 	if err := hs.svc.ListenAndServeRest(); err != nil {
 		return err
 	}
